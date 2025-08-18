@@ -1,0 +1,29 @@
+name: cash_register
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  get_it:
+  flutter_bloc:
+  equatable:
+  dartz:
+  connectivity:
+  http:
+  shared_preferences:
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  mocktail: ^1.0.3
+  build_runner:
+
+flutter:
+  uses-material-design: true
