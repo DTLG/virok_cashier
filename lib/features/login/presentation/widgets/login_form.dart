@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/login_bloc.dart';
 import '../bloc/login_event.dart';
 import '../bloc/login_state.dart';
+import '../../../../core/widgets/notificarion_toast/view.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -43,18 +44,16 @@ class _LoginFormState extends State<LoginForm> {
     return BlocListener<LoginBloc, LoginState>(
       listener: (context, state) {
         if (state is LoginSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Вітаємо, ${state.user.name}!'),
-              backgroundColor: Colors.green,
-            ),
+          ToastManager.show(
+            context,
+            type: ToastType.success,
+            title: 'Вітаємо, ${state.user.name}!',
           );
         } else if (state is LoginFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Помилка: ${state.message}'),
-              backgroundColor: Colors.red,
-            ),
+          ToastManager.show(
+            context,
+            type: ToastType.error,
+            title: 'Помилка: ${state.message}',
           );
         }
       },

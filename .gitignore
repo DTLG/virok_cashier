@@ -43,3 +43,28 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Cashalot keys and certificates - НЕ КОМІТИТИ В GIT!
+assets/cashalot_keys/
+assets/keys/
+assets/**/*.dat
+assets/**/*.crt
+assets/**/*.pem
+assets/**/*.key
+assets/**/*.jks
+assets/**/*.p12
+assets/**/*.pfx
+*.dat
+*.crt
+*.pem
+*.key
+*.jks
+*.p12
+*.pfx
+
+# Configuration files with sensitive data
+lib/core/config/cashalot_config.dart
+.env
+.env.local
+.env.*.local
+config.local.dart
