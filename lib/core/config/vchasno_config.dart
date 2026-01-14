@@ -16,4 +16,12 @@ class VchasnoConfig {
   static const String printerName = "testPrinter";
 
   static const String terminalName = "testTerminal";
+
+  //Якщо користувач не ввів налаштування принтера, то використовуємо ці значення
+
+  // IP-адреса мережевого принтера для RAW друку
+  static const String printerIp = "192.168.1.100";
+
+  /// Порт принтера для RAW друку (за замовчуванням 9100)
+  static const int printerPort = 9100;
 }
