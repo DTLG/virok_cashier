@@ -125,6 +125,14 @@ final class OpenCashalotShift extends HomeEvent {
   List<Object> get props => [prroFiscalNum ?? 0];
 }
 
+final class GetAvailablePrrosInfo extends HomeEvent {
+  final int? prroFiscalNum;
+  GetAvailablePrrosInfo({this.prroFiscalNum});
+
+  @override
+  List<Object> get props => [prroFiscalNum ?? 0];
+}
+
 /// Закриття зміни через CashalotService
 final class CloseCashalotShift extends HomeEvent {
   final int? prroFiscalNum;
@@ -139,7 +147,7 @@ final class CloseCashalotShift extends HomeEvent {
 final class ServiceDepositEvent extends HomeEvent {
   final double amount;
   final int? prroFiscalNum;
-  final String? cashier; // Опціональний касир (для тестування)
+  final String? cashier;
 
   const ServiceDepositEvent({
     required this.amount,

@@ -97,7 +97,9 @@ class _SettingsPageViewState extends State<_SettingsPageView> {
   Future<void> _selectPrro(BuildContext context) async {
     final result = await showDialog(
       context: context,
-      builder: (context) => const PrroSelectionDialog(),
+      builder: (context) => PrroSelectionDialog(
+        prroInfo: context.read<HomeBloc>().state.prroInfo ?? [],
+      ),
     );
 
     if (result != null && mounted) {
@@ -291,39 +293,39 @@ class _SettingsPageViewState extends State<_SettingsPageView> {
                   ],
                 ),
 
-                // const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                // // Налаштування Cashalot ключів
-                // SettingsSection(
-                //   title: 'Cashalot',
-                //   children: [
-                //     SettingsTile(
-                //       icon: Icons.store_outlined,
-                //       title: 'Активна каса',
-                //       subtitle: _buildPrroSubtitle(),
-                //       onTap: () => _selectPrro(context),
-                //     ),
-                //     const Padding(
-                //       padding: EdgeInsets.all(16.0),
-                //       child: CashalotKeysSelector(),
-                //     ),
-                //   ],
-                // ),
+                // Налаштування Cashalot ключів
+                SettingsSection(
+                  title: 'Cashalot',
+                  children: [
+                    SettingsTile(
+                      icon: Icons.store_outlined,
+                      title: 'Активна каса',
+                      subtitle: _buildPrroSubtitle(),
+                      onTap: () => _selectPrro(context),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CashalotKeysSelector(),
+                    ),
+                  ],
+                ),
 
-                // const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                // // Тестування Cashalot
-                // SettingsSection(
-                //   title: 'Тестування Cashalot',
-                //   children: [
-                //     SettingsTile(
-                //       icon: Icons.science_outlined,
-                //       title: 'Тестовий депозит',
-                //       subtitle: 'Перевірка з\'язку з API (1 грн)',
-                //       onTap: () => _testCashalotDeposit(context),
-                //     ),
-                //   ],
-                // ),
+                // Тестування Cashalot
+                SettingsSection(
+                  title: 'Тестування Cashalot',
+                  children: [
+                    SettingsTile(
+                      icon: Icons.science_outlined,
+                      title: 'Тестовий депозит',
+                      subtitle: 'Перевірка з\'язку з API (1 грн)',
+                      onTap: () => _testCashalotDeposit(context),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 24),
 
                 // Про додаток

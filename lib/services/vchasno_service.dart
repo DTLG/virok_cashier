@@ -7,12 +7,14 @@ import 'package:get_it/get_it.dart';
 import '../core/config/vchasno_config.dart';
 import '../core/models/cashalot_models.dart';
 import '../core/services/storage_service.dart';
+import '../core/services/prro_service.dart';
 import 'vchasno_errors.dart';
 import 'fiscal_result.dart';
 import 'x_report_data.dart';
 import 'raw_printer_service.dart';
+import '../core/models/prro_info.dart';
 
-class VchasnoService {
+class VchasnoService implements PrroService {
   String? _lastCheckTag; // Для відстеження останнього чека
   final RawPrinterService _rawPrinterService = RawPrinterService();
   final StorageService _storageService = GetIt.instance<StorageService>();
@@ -20,8 +22,18 @@ class VchasnoService {
   /// Основний метод відправки чека продажу з обробкою помилок
   ///
   /// Повертає [FiscalResult] з результатом операції
-  Future<FiscalResult> printSale(CheckPayload check) async {
+  @override
+  Future<FiscalResult> printSale(
+    CheckPayload check, {
+    int? prroFiscalNum,
+  }) async {
+    // prroFiscalNum не використовується в VchasnoService, але зберігаємо для сумісності з інтерфейсом
     return await _printSaleWithRetry(check, retryCount: 0);
+  }
+
+  @override
+  Future<List<PrroInfo>> getAvailablePrrosInfo() async {
+    return [];
   }
 
   /// Внутрішній метод з retry логікою
@@ -342,7 +354,9 @@ class VchasnoService {
 
   // --- Інші методи (X/Z звіти) ---
   /// Отримує X-звіт і повертає дані для відображення
-  Future<XReportData?> printXReport() async {
+  @override
+  Future<XReportData?> printXReport({int? prroFiscalNum}) async {
+    // prroFiscalNum не використовується в VchasnoService, але зберігаємо для сумісності з інтерфейсом
     try {
       final body = {
         "ver": 6,
@@ -449,7 +463,11 @@ class VchasnoService {
     }
   }
 
-  Future<bool> openShift() async => await _sendSimpleTask(0);
+  @override
+  Future<bool> openShift({int? prroFiscalNum}) async {
+    // prroFiscalNum не використовується в VchasnoService, але зберігаємо для сумісності з інтерфейсом
+    return await _sendSimpleTask(0);
+  }
 
   // --- Допоміжні методи ---
 
@@ -559,13 +577,32 @@ class VchasnoService {
   }
 
   /// Службове внесення
-  Future<void> serviceIn(double amount) async {
+  @override
+  Future<void> serviceIn(
+    double amount, {
+    required String cashier,
+    int? prroFiscalNum,
+  }) async {
+    // prroFiscalNum не використовується в VchasnoService, але зберігаємо для сумісності з інтерфейсом
     await _sendServiceTask(amount, type: 0);
   }
 
   /// Службова видача
-  Future<void> serviceOut(double amount) async {
+  @override
+  Future<void> serviceOut(
+    double amount, {
+    required String cashier,
+    int? prroFiscalNum,
+  }) async {
+    // prroFiscalNum не використовується в VchasnoService, але зберігаємо для сумісності з інтерфейсом
     await _sendServiceTask(amount, type: 1);
+  }
+
+  /// Закриття зміни (Z-звіт) - реалізація інтерфейсу PrroService
+  @override
+  Future<XReportData?> closeShift({int? prroFiscalNum}) async {
+    // prroFiscalNum не використовується в VchasnoService, але зберігаємо для сумісності з інтерфейсом
+    return await printZReport();
   }
 
   // --- Допоміжні методи ---

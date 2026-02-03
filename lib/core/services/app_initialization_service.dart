@@ -19,8 +19,9 @@ import '../widgets/sync_dialog.dart';
 import '../../features/settings/presentation/bloc/settings_bloc.dart';
 import '../di/sync_injection.dart';
 import '../di/home_injection.dart';
-// import '../di/cashalot_injection.dart';
-// import '../config/cashalot_config.dart';
+import '../di/cashalot_injection.dart';
+import '../di/prro_injection.dart';
+import '../config/cashalot_config.dart';
 import '../../services/vchasno_service.dart';
 
 class AppInitializationService {
@@ -101,26 +102,43 @@ class AppInitializationService {
       // Реєстрація Home залежностей
       setupHomeInjection();
 
-      // ❌ ВИДАЛЕНО: Реєстрація Cashalot залежностей
-      // Старий код Cashalot закоментовано
-      // final storageService = _sl<StorageService>();
-      // final savedKeyPath = await storageService.getCashalotKeyPath();
-      // final savedCertPath = await storageService.getCashalotCertPath();
-      // final savedKeyPassword = await storageService.getCashalotKeyPassword();
-      // final keyPath = savedKeyPath ?? CashalotConfig.keyPath;
-      // final certPath = savedCertPath ?? CashalotConfig.certPath;
-      // final keyPassword = savedKeyPassword ?? CashalotConfig.keyPassword;
-      // setupCashalotInjection(
-      //   useReal: CashalotConfig.useReal,
-      //   baseUrl: CashalotConfig.baseUrl,
-      //   keyPath: keyPath,
-      //   certPath: certPath,
-      //   keyPassword: keyPassword,
-      //   defaultPrroFiscalNum: CashalotConfig.defaultPrroFiscalNum,
-      // );
+      // Реєстрація ПРРО сервісу
+      // За замовчуванням використовується VchasnoService
+      // Для використання CashalotService потрібно:
+      // 1. Зареєструвати CashalotService через setupCashalotInjection
+      // 2. Змінити PrroServiceType.cashalot в setupPrroInjection
 
-      // ✅ ДОДАНО: Реєстрація VchasnoService
-      _sl.registerLazySingleton<VchasnoService>(() => VchasnoService());
+      // Реєстрація Cashalot залежностей (якщо потрібно)
+      final storageService = _sl<StorageService>();
+      final savedKeyPath = await storageService.getCashalotKeyPath();
+      final savedCertPath = await storageService.getCashalotCertPath();
+      final savedKeyPassword = await storageService.getCashalotKeyPassword();
+      final keyPath = savedKeyPath ?? CashalotConfig.keyPath;
+      final certPath = savedCertPath ?? CashalotConfig.certPath;
+      final keyPassword = savedKeyPassword ?? CashalotConfig.keyPassword;
+
+      // Реєструємо CashalotService (якщо потрібно для майбутнього використання)
+      setupCashalotInjection(
+        useReal: CashalotConfig.useReal,
+        baseUrl: CashalotConfig.baseUrl,
+        keyPath: keyPath,
+        certPath: certPath,
+        keyPassword: keyPassword,
+        defaultPrroFiscalNum: CashalotConfig.defaultPrroFiscalNum,
+      );
+
+      // Реєстрація PrroService (універсальний інтерфейс для ПРРО)
+      // За замовчуванням використовується VchasnoService
+      // Для перемикання на Cashalot змініть PrroServiceType.cashalot
+      final defaultPrroFiscalNum = CashalotConfig.defaultPrroFiscalNum != null
+          ? int.tryParse(CashalotConfig.defaultPrroFiscalNum!)
+          : null;
+
+      setupPrroInjection(
+        serviceType: PrroServiceType
+            .cashalot, // Змініть на .cashalot для використання Cashalot
+        defaultPrroFiscalNum: defaultPrroFiscalNum,
+      );
 
       _isInitialized = true;
     } catch (e) {

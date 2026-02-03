@@ -25,6 +25,7 @@ class HomeViewState extends Equatable {
   final VchasnoException? vchasnoError; // Помилка Vchasno для показу діалогу
   final FiscalResult? fiscalResult; // Результат фіскалізації для показу QR
   final XReportData? xReportData; // Дані X-звіту для показу діалогу
+  final List<PrroInfo>? prroInfo;
 
   const HomeViewState({
     this.status = HomeStatus.initial,
@@ -40,6 +41,7 @@ class HomeViewState extends Equatable {
     this.vchasnoError,
     this.fiscalResult,
     this.xReportData,
+    this.prroInfo,
   });
 
   HomeViewState copyWith({
@@ -56,6 +58,7 @@ class HomeViewState extends Equatable {
     VchasnoException? vchasnoError,
     FiscalResult? fiscalResult,
     XReportData? xReportData,
+    List<PrroInfo>? prroInfo,
     // Спеціальні прапорці для явного встановлення null
     bool clearOpenedShiftAt = false,
     bool clearXReportData = false,
@@ -82,6 +85,7 @@ class HomeViewState extends Equatable {
           ? null
           : (fiscalResult ?? this.fiscalResult),
       xReportData: clearXReportData ? null : (xReportData ?? this.xReportData),
+      prroInfo: prroInfo ?? this.prroInfo,
     );
   }
 
@@ -100,6 +104,7 @@ class HomeViewState extends Equatable {
     vchasnoError,
     fiscalResult,
     xReportData,
+    prroInfo,
   ];
 }
 

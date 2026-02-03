@@ -46,7 +46,8 @@ class _CashalotKeysSelectorState extends State<CashalotKeysSelector> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['dat', 'jks', 'key', 'pem'],
+        // Дозволяємо стандартні формати ключів + новий формат .ZS2
+        allowedExtensions: ['dat', 'jks', 'key', 'pem', 'zs2', 'ZS2'],
         dialogTitle: 'Виберіть файл приватного ключа',
       );
 

@@ -119,7 +119,7 @@ class RealCashalotService implements CashalotService {
   }
 
   @override
-  Future<List<String>> getAvailablePrros() async {
+  Future<List<PrroInfo>> getAvailablePrros() async {
     try {
       debugPrint('📡 [CASHALOT] Запит: getAvailablePrros()');
       debugPrint('🔍 Шукаємо доступні ПРРО для вашого ключа...');
@@ -132,7 +132,7 @@ class RealCashalotService implements CashalotService {
       debugPrint('📥 [CASHALOT] Відповідь Objects:');
       debugPrint('   ${const JsonEncoder.withIndent('   ').convert(response)}');
 
-      final List<String> result = [];
+      final List<PrroInfo> result = [];
 
       // Парсимо складну структуру відповіді Cashalot
       // Структура: TaxObjects -> TransactionsRegistrars -> NumFiscal
@@ -149,8 +149,10 @@ class RealCashalotService implements CashalotService {
                       final numFiscal = prro['NumFiscal'];
                       if (numFiscal != null) {
                         final numFiscalStr = numFiscal.toString();
-                        result.add(numFiscalStr);
                         final name = prro['Name'] as String? ?? 'Без назви';
+                        result.add(
+                          PrroInfo(numFiscal: numFiscalStr, name: name),
+                        );
                         debugPrint(
                           '✅ [CASHALOT] ЗНАЙДЕНО ПРРО: $name -> $numFiscalStr',
                         );
@@ -172,7 +174,9 @@ class RealCashalotService implements CashalotService {
           debugPrint(
             '📥 [CASHALOT] Використовується default ПРРО: $defaultPrro',
           );
-          return [defaultPrro];
+          return [
+            PrroInfo(numFiscal: defaultPrro, name: 'Каса за замовчуванням'),
+          ];
         }
       } else {
         debugPrint('✅ [CASHALOT] Знайдено ${result.length} ПРРО: $result');
@@ -187,7 +191,9 @@ class RealCashalotService implements CashalotService {
         debugPrint(
           '⚠️ [CASHALOT] Використовується default ПРРО через помилку: $defaultPrro',
         );
-        return [defaultPrro];
+        return [
+          PrroInfo(numFiscal: defaultPrro, name: 'Каса за замовчуванням'),
+        ];
       }
       rethrow;
     }
@@ -287,6 +293,52 @@ class RealCashalotService implements CashalotService {
       debugPrint('📥 [CASHALOT] Отримано відповідь getPrroState:');
       debugPrint('   ${const JsonEncoder.withIndent('   ').convert(response)}');
 
+      // Перевіряємо наявність помилки в відповіді
+      final errorCode = response['ErrorCode'] as String?;
+      if (errorCode != null && errorCode.isNotEmpty) {
+        final errorMessage =
+            response['ErrorMessage'] as String? ?? 'Unknown error';
+        debugPrint('❌ [CASHALOT] Помилка в getPrroState:');
+        debugPrint('   ErrorCode: $errorCode');
+        debugPrint('   ErrorMessage: $errorMessage');
+
+        // Якщо це помилка синхронізації, спробуємо синхронізувати
+        if (errorCode == 'InconsistentRegistrarState') {
+          debugPrint(
+            '🔄 [CASHALOT] Спроба синхронізації стану з AllLogs=true...',
+          );
+          try {
+            final syncResponse = await _apiClient.getRegistrarState(
+              prroFiscalNum: prroFiscalNum,
+              authParams: authParams,
+              allLogs: true, // Викачуємо всі події для синхронізації
+            );
+
+            // Перевіряємо чи після синхронізації все ще є помилка
+            final syncErrorCode = syncResponse['ErrorCode'] as String?;
+            if (syncErrorCode == null || syncErrorCode.isEmpty) {
+              debugPrint('✅ [CASHALOT] Синхронізація успішна');
+              return _parseResponse(syncResponse);
+            } else {
+              debugPrint(
+                '⚠️ [CASHALOT] Після синхронізації все ще є помилка: $syncErrorCode',
+              );
+              // Після синхронізації все ще є помилка - просто логуємо
+              debugPrint(
+                '   ErrorMessage: ${syncResponse['ErrorMessage'] ?? 'Unknown'}',
+              );
+            }
+          } catch (syncError) {
+            debugPrint('❌ [CASHALOT] Помилка синхронізації: $syncError');
+          }
+        }
+
+        return CashalotResponse(
+          errorCode: errorCode,
+          errorMessage: errorMessage,
+        );
+      }
+
       // Логуємо стан зміни (0 - закрита, 1 - відкрита)
       final shiftState = response['ShiftState'] as int?;
       debugPrint('📊 [CASHALOT] Стан зміни (ShiftState): $shiftState');
@@ -296,10 +348,132 @@ class RealCashalotService implements CashalotService {
         debugPrint('   ⚠️ Зміна закрита');
       }
 
+      // Логуємо LastLocalNumber для синхронізації
+      final lastLocalNumber = response['LastLocalNumber'] as int?;
+      if (lastLocalNumber != null) {
+        debugPrint('📋 [CASHALOT] Останній локальний номер: $lastLocalNumber');
+        debugPrint('   Наступний номер має бути: ${lastLocalNumber + 1}');
+      } else {
+        debugPrint('⚠️ [CASHALOT] LastLocalNumber не знайдено в відповіді');
+      }
+
       return _parseResponse(response);
     } catch (e) {
       debugPrint('❌ [CASHALOT] Помилка отримання статусу: $e');
       return CashalotResponse(errorCode: 'ERROR', errorMessage: e.toString());
+    }
+  }
+
+  /// Синхронізує стан каси з сервером (викачує всі події)
+  /// Використовується для виправлення помилки InconsistentRegistrarState
+  Future<CashalotResponse> syncRegistrarState({
+    required int prroFiscalNum,
+  }) async {
+    try {
+      debugPrint('🔄 [CASHALOT] Синхронізація стану каси...');
+      debugPrint('   ПРРО: $prroFiscalNum');
+
+      final authParams = await _getAuthParams();
+      final response = await _apiClient.getRegistrarState(
+        prroFiscalNum: prroFiscalNum,
+        authParams: authParams,
+        allLogs: true, // Викачуємо всі події для синхронізації
+      );
+
+      debugPrint('✅ [CASHALOT] Синхронізація завершена');
+      return _parseResponse(response);
+    } catch (e) {
+      debugPrint('❌ [CASHALOT] Помилка синхронізації: $e');
+      return CashalotResponse(errorCode: 'ERROR', errorMessage: e.toString());
+    }
+  }
+
+  /// Парсер для помилки типу "Номер документа повинен дорівнювати 3683"
+  /// ВАЖЛИВО: НЕ використовується для OfflineSessionId (це інше число!)
+  int? _extractCorrectLocalNum(String errorMessage) {
+    try {
+      // Шукаємо число в кінці речення або після слів "дорівнювати"
+      final regex = RegExp(r'дорівнювати\s*(\d+)');
+      final match = regex.firstMatch(errorMessage);
+      if (match != null) {
+        return int.tryParse(match.group(1)!);
+      }
+    } catch (e) {
+      debugPrint('⚠️ [CASHALOT] Помилка парсингу номера з тексту помилки: $e');
+    }
+    return null;
+  }
+
+  /// Отримує наступний локальний номер документа зі стану каси
+  /// Повертає LastLocalNumber + 1 або null якщо не вдалося отримати
+  /// Автоматично обробляє помилки синхронізації
+  Future<int?> _getNextLocalNumber(int prroFiscalNum) async {
+    try {
+      final authParams = await _getAuthParams();
+
+      // Спроба №1: Отримати стан з ПРИМУСОВИМ вимкненням офлайну
+      // Це допоможе обійти InconsistentRegistrarState
+      var response = await _apiClient.getRegistrarState(
+        prroFiscalNum: prroFiscalNum,
+        authParams: authParams,
+        offline: false, // ГОВОРИМО СЕРВЕРУ, ЩО МИ В ОНЛАЙНІ
+      );
+
+      String? errorCode = response['ErrorCode'] as String?;
+      String? errorMessage = response['ErrorMessage'] as String?;
+
+      // ЛОГІКА ВИПРАВЛЕННЯ СИНХРОНІЗАЦІЇ
+      if (errorCode == 'InconsistentRegistrarState') {
+        debugPrint('🔄 [CASHALOT] Все ще бачимо розсинхрон. Спроба AllLogs...');
+
+        response = await _apiClient.getRegistrarState(
+          prroFiscalNum: prroFiscalNum,
+          authParams: authParams,
+          allLogs: true,
+          offline: false,
+        );
+
+        errorCode = response['ErrorCode'] as String?;
+        errorMessage = response['ErrorMessage'] as String?;
+      }
+
+      // ЛОГІКА ВИПРАВЛЕННЯ НЕПРАВИЛЬНОГО НОМЕРА
+      // Це спрацює, якщо сервер поверне код 7 (CheckLocalNumberInvalid)
+      if (errorCode == 'CheckLocalNumberInvalid' ||
+          (errorMessage != null &&
+              errorMessage.contains('повинен дорівнювати'))) {
+        final correctNumber = _extractCorrectLocalNum(errorMessage ?? '');
+        if (correctNumber != null) {
+          debugPrint(
+            '💡 [CASHALOT] Сервер підказав правильний номер: $correctNumber',
+          );
+          return correctNumber;
+        }
+      }
+
+      // Якщо після всіх спроб є критична помилка
+      if (errorCode != null && errorCode.isNotEmpty) {
+        debugPrint(
+          '❌ [CASHALOT] Критична помилка API: $errorCode - $errorMessage',
+        );
+        return null;
+      }
+
+      // СТАНДАРТНИЙ СЦЕНАРІЙ (після успішної відповіді)
+      final lastLocalNumber = response['LastLocalNumber'] as int?;
+      if (lastLocalNumber != null) {
+        final nextNumber = lastLocalNumber + 1;
+        debugPrint(
+          '📋 [CASHALOT] Успішно отримано LastLocalNumber: $lastLocalNumber',
+        );
+        return nextNumber;
+      }
+
+      debugPrint('⚠️ [CASHALOT] LastLocalNumber відсутній у відповіді');
+      return null;
+    } catch (e) {
+      debugPrint('❌ [CASHALOT] Помилка отримання LastLocalNumber: $e');
+      return null;
     }
   }
 
@@ -320,7 +494,19 @@ class RealCashalotService implements CashalotService {
       debugPrint('📥 [CASHALOT] Відповідь openShift:');
       debugPrint('   Дані: $response');
 
-      return _parseResponse(response);
+      final parsedResponse = _parseResponse(response);
+
+      // Перевіряємо чи є помилка в відповіді
+      if (!parsedResponse.isSuccess) {
+        debugPrint('❌ [CASHALOT] openShift завершився з помилкою:');
+        debugPrint('   ErrorCode: ${parsedResponse.errorCode}');
+        debugPrint('   ErrorMessage: ${parsedResponse.errorMessage}');
+        throw Exception(
+          'Не вдалося відкрити зміну: ${parsedResponse.errorMessage ?? parsedResponse.errorCode ?? "Unknown error"}',
+        );
+      }
+
+      return parsedResponse;
     } catch (e) {
       debugPrint('❌ [CASHALOT] Помилка openShift: $e');
       return CashalotResponse(errorCode: 'ERROR', errorMessage: e.toString());
@@ -366,13 +552,26 @@ class RealCashalotService implements CashalotService {
           )
           .toList();
 
+      // Отримуємо наступний локальний номер зі стану каси
+      final numLocal = await _getNextLocalNumber(prroFiscalNum);
+      if (numLocal == null) {
+        return CashalotResponse(
+          errorCode: 'ERROR',
+          errorMessage: 'Не вдалося отримати локальний номер документа',
+        );
+      }
+
+      debugPrint('   NumLocal: $numLocal');
+
       final response = await _apiClient.registerCheck(
         prroFiscalNum: prroFiscalNum,
+        numLocal: numLocal,
         checkHead: check.checkHead.toJson(),
         checkBody: items,
         checkTotal: check.checkTotal.toJson(),
         checkPay: check.checkPay.map((p) => p.toJson()).toList(),
         authParams: authParams,
+        offline: false, // Примусово вимикаємо офлайн-режим
       );
 
       debugPrint('📥 [CASHALOT] Відповідь registerSale:');
@@ -398,6 +597,28 @@ class RealCashalotService implements CashalotService {
       debugPrint('     amount: $amount UAH');
       debugPrint('     cashier: $cashier');
 
+      // Перевіряємо чи зміна відкрита перед службовим внесенням
+      final stateResponse = await getPrroState(prroFiscalNum: prroFiscalNum);
+      if (!stateResponse.isSuccess) {
+        return CashalotResponse(
+          errorCode: stateResponse.errorCode ?? 'ERROR',
+          errorMessage:
+              'Не вдалося перевірити стан каси: ${stateResponse.errorMessage}',
+        );
+      }
+
+      final shiftState = stateResponse.shiftState;
+      if (shiftState != 1) {
+        debugPrint('❌ [CASHALOT] Зміна не відкрита (ShiftState: $shiftState)');
+        return CashalotResponse(
+          errorCode: 'SHIFT_NOT_OPEN',
+          errorMessage:
+              'Неможливо виконати службове внесення: зміна не відкрита. Спочатку відкрийте зміну.',
+        );
+      }
+
+      debugPrint('✅ [CASHALOT] Зміна відкрита, продовжуємо...');
+
       final authParams = await _getAuthParams();
 
       // Створюємо чек для службового внесення
@@ -414,7 +635,9 @@ class RealCashalotService implements CashalotService {
       ];
 
       final checkHead = {
-        'DOCTYPE': 'ServiceDeposit',
+        // DOCTYPE очікується як числовий код:
+        // 0 - Продаж, 1 - Повернення, 2 - Службове внесення, 3 - Службова видача
+        'DOCTYPE': 2, // 2 = Службове внесення
         'DOCSUBTYPE': 'ServiceDeposit',
         'CASHIER': cashier,
       };
@@ -425,13 +648,26 @@ class RealCashalotService implements CashalotService {
         {'PAYFORMNM': 'ГОТІВКА', 'SUM': amount},
       ];
 
+      // Отримуємо наступний локальний номер зі стану каси
+      final numLocal = await _getNextLocalNumber(prroFiscalNum);
+      if (numLocal == null) {
+        return CashalotResponse(
+          errorCode: 'ERROR',
+          errorMessage: 'Не вдалося отримати локальний номер документа',
+        );
+      }
+
+      debugPrint('   NumLocal: $numLocal');
+
       final response = await _apiClient.registerCheck(
         prroFiscalNum: prroFiscalNum,
+        numLocal: numLocal,
         checkHead: checkHead,
         checkBody: items,
         checkTotal: checkTotal,
         checkPay: checkPay,
         authParams: authParams,
+        offline: false, // Примусово вимикаємо офлайн-режим
       );
 
       debugPrint('📥 [CASHALOT] Відповідь serviceDeposit:');
@@ -457,6 +693,28 @@ class RealCashalotService implements CashalotService {
       debugPrint('     amount: $amount UAH');
       debugPrint('     cashier: $cashier');
 
+      // Перевіряємо чи зміна відкрита перед службовою видачею
+      final stateResponse = await getPrroState(prroFiscalNum: prroFiscalNum);
+      if (!stateResponse.isSuccess) {
+        return CashalotResponse(
+          errorCode: stateResponse.errorCode ?? 'ERROR',
+          errorMessage:
+              'Не вдалося перевірити стан каси: ${stateResponse.errorMessage}',
+        );
+      }
+
+      final shiftState = stateResponse.shiftState;
+      if (shiftState != 1) {
+        debugPrint('❌ [CASHALOT] Зміна не відкрита (ShiftState: $shiftState)');
+        return CashalotResponse(
+          errorCode: 'SHIFT_NOT_OPEN',
+          errorMessage:
+              'Неможливо виконати службову видачу: зміна не відкрита. Спочатку відкрийте зміну.',
+        );
+      }
+
+      debugPrint('✅ [CASHALOT] Зміна відкрита, продовжуємо...');
+
       final authParams = await _getAuthParams();
 
       // Створюємо чек для службової видачі
@@ -473,7 +731,9 @@ class RealCashalotService implements CashalotService {
       ];
 
       final checkHead = {
-        'DOCTYPE': 'ServiceIssue',
+        // DOCTYPE очікується як числовий код:
+        // 0 - Продаж, 1 - Повернення, 2 - Службове внесення, 3 - Службова видача
+        'DOCTYPE': 3, // 3 = Службова видача
         'DOCSUBTYPE': 'ServiceIssue',
         'CASHIER': cashier,
       };
@@ -484,13 +744,26 @@ class RealCashalotService implements CashalotService {
         {'PAYFORMNM': 'ГОТІВКА', 'SUM': amount},
       ];
 
+      // Отримуємо наступний локальний номер зі стану каси
+      final numLocal = await _getNextLocalNumber(prroFiscalNum);
+      if (numLocal == null) {
+        return CashalotResponse(
+          errorCode: 'ERROR',
+          errorMessage: 'Не вдалося отримати локальний номер документа',
+        );
+      }
+
+      debugPrint('   NumLocal: $numLocal');
+
       final response = await _apiClient.registerCheck(
         prroFiscalNum: prroFiscalNum,
+        numLocal: numLocal,
         checkHead: checkHead,
         checkBody: items,
         checkTotal: checkTotal,
         checkPay: checkPay,
         authParams: authParams,
+        offline: false, // Примусово вимикаємо офлайн-режим
       );
 
       debugPrint('📥 [CASHALOT] Відповідь serviceIssue:');
@@ -525,6 +798,15 @@ class RealCashalotService implements CashalotService {
       debugPrint('❌ [CASHALOT] Помилка closeShift: $e');
       return CashalotResponse(errorCode: 'ERROR', errorMessage: e.toString());
     }
+  }
+
+  @override
+  Future<PrroInfo> getPrroInfo({required int prroFiscalNum}) async {
+    final response = await _apiClient.getRegistrarState(
+      prroFiscalNum: prroFiscalNum,
+      authParams: await _getAuthParams(),
+    );
+    return PrroInfo.fromJson(response);
   }
 
   /// Парсить відповідь API в CashalotResponse

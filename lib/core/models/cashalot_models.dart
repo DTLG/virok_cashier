@@ -19,7 +19,7 @@ class CashalotResponse {
     this.shiftState,
   });
 
-  bool get isSuccess => errorCode == null;
+  bool get isSuccess => errorCode == null || errorCode == 'Ok';
 
   /// Чи відкрита зміна
   bool get isShiftOpen => shiftState == 1;

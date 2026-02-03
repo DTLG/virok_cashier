@@ -15,11 +15,14 @@ class MockCashalotService implements CashalotService {
   }
 
   @override
-  Future<List<String>> getAvailablePrros() async {
+  Future<List<PrroInfo>> getAvailablePrros() async {
     debugPrint('📡 [CASHALOT] Запит: getAvailablePrros()');
     await _fakeNetworkDelay();
-    // Повертаємо фейкові фіскальні номери ПРРО
-    final result = ["4000000001", "4000000002"];
+    // Повертаємо фейкові ПРРО з інформацією
+    final result = [
+      PrroInfo(numFiscal: '4000000001', name: 'Каса 1 (Mock)'),
+      PrroInfo(numFiscal: '4000000002', name: 'Каса 2 (Mock)'),
+    ];
     debugPrint('📥 [CASHALOT] Відповідь getAvailablePrros: $result');
     return result;
   }
@@ -313,5 +316,17 @@ class MockCashalotService implements CashalotService {
     buffer.writeln("Дата: ${DateTime.now().toString().substring(0, 19)}");
     buffer.writeln("--------------------------------");
     return buffer.toString();
+  }
+
+  @override
+  Future<PrroInfo> getPrroInfo({required int prroFiscalNum}) async {
+    debugPrint('📡 [CASHALOT] Запит: getPrroInfo()');
+    debugPrint('   Параметри:');
+    debugPrint('     prroFiscalNum: $prroFiscalNum');
+    await _fakeNetworkDelay();
+    return PrroInfo(
+      numFiscal: prroFiscalNum.toString(),
+      name: 'Каса $prroFiscalNum (Mock)',
+    );
   }
 }

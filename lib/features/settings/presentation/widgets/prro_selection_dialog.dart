@@ -8,7 +8,8 @@ import '../../../../core/widgets/notificarion_toast/view.dart';
 /// Діалог для вибору активної каси (ПРРО)
 /// Для Vchasno не потрібно отримувати список ПРРО з API
 class PrroSelectionDialog extends StatefulWidget {
-  const PrroSelectionDialog({super.key});
+  final List<PrroInfo> prroInfo;
+  const PrroSelectionDialog({super.key, required this.prroInfo});
 
   @override
   State<PrroSelectionDialog> createState() => _PrroSelectionDialogState();
@@ -36,27 +37,17 @@ class _PrroSelectionDialogState extends State<PrroSelectionDialog> {
     });
 
     try {
-      // Для Vchasno не потрібно отримувати список ПРРО з API
-      // Використовуємо збережений номер або дефолтне значення
       if (_savedPrroNum != null) {
         _prros = [
-          PrroInfo(
-            numFiscal: _savedPrroNum!,
-            name: 'Каса ${_savedPrroNum!}',
-          ),
+          PrroInfo(numFiscal: _savedPrroNum!, name: 'Каса ${_savedPrroNum!}'),
         ];
         _selectedPrro = _prros.first;
       } else {
         // Якщо немає збереженої каси, створюємо дефолтну
-        _prros = [
-          PrroInfo(
-            numFiscal: '1',
-            name: 'Каса 1',
-          ),
-        ];
+        _prros = [PrroInfo(numFiscal: '4000365576', name: 'Каса 1')];
         _selectedPrro = _prros.first;
       }
-      
+
       setState(() {
         _isLoading = false;
       });

@@ -4,9 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import '../../../../core/services/storage_service.dart';
-// import '../../../../core/services/cashalot_service.dart';
+import '../../../../core/services/prro_service.dart';
 import '../../../../core/models/cashalot_models.dart';
-import '../../../../services/vchasno_service.dart';
 import '../../../../services/vchasno_errors.dart';
 import '../../../../services/fiscal_result.dart';
 import '../../../../services/x_report_data.dart';
@@ -17,13 +16,14 @@ import '../../data/datasources/shift_remote_data_source.dart';
 import '../../data/datasources/check_remote_data_source.dart';
 import '../../../login/domain/entities/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/models/prro_info.dart';
 
 part 'home_event.dart';
 part 'home_state.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
   final StorageService storageService;
-  final VchasnoService vchasnoService;
+  final PrroService prroService;
   final TerminalPaymentService terminalPaymentService =
       TerminalPaymentService();
   final RawPrinterService _rawPrinterService = RawPrinterService();
@@ -34,8 +34,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     Supabase.instance.client,
   );
 
-  HomeBloc({required this.storageService, VchasnoService? vchasnoService})
-    : vchasnoService = vchasnoService ?? GetIt.instance<VchasnoService>(),
+  HomeBloc({required this.storageService, PrroService? prroService})
+    : prroService = prroService ?? GetIt.instance<PrroService>(),
       super(const HomeViewState()) {
     on<CheckUserLoginStatus>(_onCheckUserLoginStatus);
     on<LogoutUser>(_onLogoutUser);
@@ -53,6 +53,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     on<ClearSearchResults>(_onClearSearchResults);
     on<NavigateToPage>(_onNavigateToPage);
     on<OpenCashalotShift>(_onOpenCashalotShift);
+    on<GetAvailablePrrosInfo>(_onGetAvailablePrrosInfo);
     on<CloseCashalotShift>(_onCloseCashalotShift);
     on<ServiceDepositEvent>(_onServiceDeposit);
     on<ServiceIssueEvent>(_onServiceIssue);
@@ -403,7 +404,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
         // Друкуємо банківський сліп (термінальний чек) перед фіскальним чеком
         final String? slipText = finishResult.bankReceiptText;
         if (slipText != null && slipText.isNotEmpty) {
-          debugPrint("🖨️ [CHECKOUT] Отримано текст банківського сліпа, друкуємо...");
+          debugPrint(
+            "🖨️ [CHECKOUT] Отримано текст банківського сліпа, друкуємо...",
+          );
           try {
             // Отримуємо налаштування принтера з SharedPreferences
             final printerIp =
@@ -430,9 +433,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
             );
             debugPrint("✅ [CHECKOUT] Банківський сліп (мерчант) надруковано");
           } catch (e) {
-            debugPrint(
-              "⚠️ [CHECKOUT] Помилка друку банківського сліпа: $e",
-            );
+            debugPrint("⚠️ [CHECKOUT] Помилка друку банківського сліпа: $e");
             // Не перериваємо процес, якщо друк сліпа не вдався
             // Фіскалізація все одно має пройти
           }
@@ -444,11 +445,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
         }
       }
 
-      // Після успішної (або готівкової) оплати проводимо фіскалізацію через Vchasno
-      debugPrint(
-        '🚀 [CHECKOUT] Відправка запиту printSale до VchasnoService...',
-      );
-      final fiscalResult = await vchasnoService.printSale(checkPayload);
+      // Після успішної (або готівкової) оплати проводимо фіскалізацію через ПРРО
+      debugPrint('🚀 [CHECKOUT] Відправка запиту printSale до PrroService...');
+      final fiscalResult = await prroService.printSale(checkPayload);
 
       if (!fiscalResult.success) {
         debugPrint(
@@ -596,10 +595,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     try {
       emit(state.copyWith(status: HomeStatus.loading));
       // debugPrint('🔓 [OPEN_SHIFT] Вчасно не потребує відкриття зміни окремо');
-      await vchasnoService.openShift();
+      await prroService.openShift();
       debugPrint('✅ [OPEN_SHIFT] Готово до роботи');
       // Отримуємо X-звіт, але не зберігаємо в стані (не показуємо діалог)
-      await vchasnoService.printXReport();
+      await prroService.printXReport();
       emit(
         state.copyWith(
           status: HomeStatus.loggedIn,
@@ -608,6 +607,22 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
       );
     } catch (e) {
       debugPrint('❌ [OPEN_SHIFT] Помилка: $e');
+      emit(
+        state.copyWith(status: HomeStatus.error, errorMessage: e.toString()),
+      );
+    }
+  }
+
+  Future<void> _onGetAvailablePrrosInfo(
+    GetAvailablePrrosInfo event,
+    Emitter<HomeViewState> emit,
+  ) async {
+    try {
+      emit(state.copyWith(status: HomeStatus.loading));
+      final prros = await prroService.getAvailablePrrosInfo();
+      emit(state.copyWith(prroInfo: prros));
+    } catch (e) {
+      debugPrint('❌ [GET_AVAILABLE_PRROS_INFO] Помилка: $e');
       emit(
         state.copyWith(status: HomeStatus.error, errorMessage: e.toString()),
       );
@@ -626,7 +641,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
       debugPrint(
         '🚀 [CLOSE_SHIFT] Відправка запиту printZReport до VchasnoService...',
       );
-      final reportData = await vchasnoService.printZReport();
+      final reportData = await prroService.closeShift();
 
       if (reportData != null) {
         debugPrint('✅ [CLOSE_SHIFT] Z-звіт успішно отримано!');
@@ -669,11 +684,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
       debugPrint('   Сума: ${event.amount} UAH');
 
       debugPrint(
-        '🚀 [SERVICE_DEPOSIT] Відправка запиту serviceIn до VchasnoService...',
+        '🚀 [SERVICE_DEPOSIT] Відправка запиту serviceIn до PrroService...',
       );
       debugPrint('   Сума: ${event.amount} UAH');
       debugPrint('   Касир: $cashierName');
-      await vchasnoService.serviceIn(event.amount);
+      await prroService.serviceIn(event.amount, cashier: cashierName);
 
       debugPrint('✅ [SERVICE_DEPOSIT] Службове внесення успішно виконано!');
 
@@ -703,11 +718,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
       debugPrint('   Сума: ${event.amount} UAH');
 
       debugPrint(
-        '🚀 [SERVICE_ISSUE] Відправка запиту serviceOut до VchasnoService...',
+        '🚀 [SERVICE_ISSUE] Відправка запиту serviceOut до PrroService...',
       );
       debugPrint('   Сума: ${event.amount} UAH');
       debugPrint('   Касир: $cashierName');
-      await vchasnoService.serviceOut(event.amount);
+      await prroService.serviceOut(event.amount, cashier: cashierName);
 
       debugPrint('✅ [SERVICE_ISSUE] Службова видача успішно виконано!');
       emit(state.copyWith(status: HomeStatus.loggedIn));
@@ -726,7 +741,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     try {
       // emit(state.copyWith(status: HomeStatus.loading));
       debugPrint('🔒 [X_REPORT] Початок отримання X-звіту...');
-      final reportData = await vchasnoService.printXReport();
+      final reportData = await prroService.printXReport();
       if (reportData != null) {
         debugPrint('✅ [X_REPORT] X-звіт успішно отримано!');
         emit(state.copyWith(xReportData: reportData));

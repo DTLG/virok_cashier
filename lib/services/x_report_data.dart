@@ -11,7 +11,8 @@ class XReportData {
   final int? shiftLink; // Поточний номер Z-звіту
   final int? shiftPrevLink; // Номер попереднього Z-звіту
   final int? vacantOffNums; // Кількість доступних офлайн номерів
-
+  final String? visualization; // Base64 рядкова візуалізація
+  final bool isZRep; // Чи є Z-звіт
   // Підсумки по чеках
   final ReceiptSummary? receipt;
 
@@ -63,6 +64,8 @@ class XReportData {
     this.warnings = const [],
     this.billing,
     this.printHeader,
+    this.visualization,
+    this.isZRep = false,
   });
 
   factory XReportData.fromJson(Map<String, dynamic> json) {

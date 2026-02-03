@@ -1,3 +1,4 @@
+import 'dart:convert'; // 1. Для декодування Base64
 import 'package:flutter/material.dart';
 import '../../../../services/x_report_data.dart';
 
@@ -5,12 +6,27 @@ import '../../../../services/x_report_data.dart';
 class XReportDialog extends StatelessWidget {
   final XReportData reportData;
   final String title;
-
+  final String? visualization; // 2. Додаємо поле для Base64 рядка
+  final bool isZRep; // Можна додати прапорець, щоб розрізняти X та Z
   const XReportDialog({
     super.key,
     required this.reportData,
     this.title = 'X-Звіт',
+    this.isZRep = false,
+    this.visualization, // Приймаємо його в конструкторі
   });
+
+  // 3. Метод для декодування
+  String _decodeVisualization(String base64Str) {
+    try {
+      // Очищаємо від можливих пробілів/переносів, якщо вони є
+      final cleanStr = base64Str.replaceAll(RegExp(r'\s+'), '');
+      final bytes = base64.decode(cleanStr);
+      return utf8.decode(bytes);
+    } catch (e) {
+      return 'Не вдалося декодувати чек: $e';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +34,9 @@ class XReportDialog extends StatelessWidget {
       backgroundColor: const Color(0xFF2A2A2A),
       child: Container(
         width: 600,
-        constraints: const BoxConstraints(maxHeight: 700),
+        constraints: const BoxConstraints(
+          maxHeight: 800,
+        ), // Трохи збільшив висоту
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -61,6 +79,35 @@ class XReportDialog extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // === СЕКЦІЯ ВІЗУАЛІЗАЦІЇ (НОВА) ===
+                    if (visualization != null && visualization!.isNotEmpty)
+                      _buildSection('Візуалізація чека', [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFF1E1E1E,
+                            ), // Темніший фон для "паперу"
+                            border: Border.all(color: Colors.white12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: SelectableText(
+                            // Щоб можна було копіювати текст
+                            _decodeVisualization(visualization!),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontFamily:
+                                  'monospace', // ВАЖЛИВО: для рівних колонок
+                              fontSize: 12,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                      ]),
+
+                    if (visualization != null) const SizedBox(height: 16),
+
                     // Загальна інформація
                     _buildSection('Загальна інформація', [
                       _buildInfoRow('Дата/Час', reportData.dt ?? 'N/A'),
@@ -177,7 +224,7 @@ class XReportDialog extends StatelessWidget {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.warning,
                                   color: Colors.orange,
                                   size: 16,

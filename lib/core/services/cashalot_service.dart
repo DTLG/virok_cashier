@@ -9,7 +9,7 @@ abstract class CashalotService {
   @Deprecated(
     'Використовуйте getAvailablePrrosInfo() для отримання повної інформації',
   )
-  Future<List<String>> getAvailablePrros();
+  Future<List<PrroInfo>> getAvailablePrros();
 
   /// Отримання списку доступних ПРРО з повною інформацією
   /// Повертає список PrroInfo з назвами та номерами кас
@@ -41,6 +41,8 @@ abstract class CashalotService {
     required double amount,
     required String cashier,
   });
+
+  Future<PrroInfo> getPrroInfo({required int prroFiscalNum});
 
   /// Службова видача грошей (інкасація)
   /// [prroFiscalNum] - фіскальний номер ПРРО

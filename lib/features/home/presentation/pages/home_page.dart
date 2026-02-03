@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../core/services/storage_service.dart';
-// import '../../../../core/services/cashalot_service.dart';
-import '../../../../services/vchasno_service.dart';
+import '../../../../core/services/prro_service.dart';
 import '../bloc/home_bloc.dart';
 import '../widgets/navigation/sidebar_navigation.dart';
 import '../widgets/pages/page_content.dart';
@@ -36,8 +35,8 @@ class _HomePageState extends State<HomePage> {
     return BlocProvider(
       create: (context) => HomeBloc(
         storageService: StorageService(),
-        vchasnoService: GetIt.instance<VchasnoService>(),
-      ),
+        prroService: GetIt.instance<PrroService>(),
+      )..add(GetAvailablePrrosInfo()),
       child: MultiBlocListener(
         listeners: [
           // 1. Загальний слухач для toasts/помилок/навігації

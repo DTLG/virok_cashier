@@ -86,13 +86,28 @@ class CashalotApiClient {
   // Status
   /// Отримання стану ПРРО (TransactionsRegistrarState)
   /// Обов'язковий виклик перед будь-якими операціями
+  /// [allLogs] - якщо true, викачує всі останні події з сервера для синхронізації
+  /// Отримання стану ПРРО (TransactionsRegistrarState)
+
+  Future<Map<String, dynamic>> getPrroInfo({
+    required int prroFiscalNum,
+    required Map<String, dynamic> authParams,
+  }) async {
+    final payload = {'Command': 'Objects'};
+    return _postWithKeys('', payload);
+  }
+
   Future<Map<String, dynamic>> getRegistrarState({
     required int prroFiscalNum,
     required Map<String, dynamic> authParams,
+    bool allLogs = false,
+    bool offline = false, // Додаємо цей параметр
   }) async {
     final payload = {
       'Command': 'TransactionsRegistrarState',
       'NumFiscal': prroFiscalNum,
+      'AllLogs': true,
+      'Offline': offline, // Передаємо статус офлайну
       ...authParams,
     };
     return _postWithKeys('', payload);
@@ -110,9 +125,12 @@ class CashalotApiClient {
 
   // Shifts
   /// Відкриття зміни
+  /// [numLocal] - локальний номер документа (обов'язковий для синхронізації)
+  /// [offline] - чи використовувати офлайн-режим (за замовчуванням false)
   Future<Map<String, dynamic>> openShift({
     required int prroFiscalNum,
     required Map<String, dynamic> authParams,
+    bool offline = false,
   }) async {
     final payload = {
       'Command': 'OpenShift',
@@ -129,6 +147,8 @@ class CashalotApiClient {
   }) async {
     final payload = {
       'Command': 'CloseShift',
+      'ZRepAuto': true,
+      "Visualization": true,
       'NumFiscal': prroFiscalNum, // Передаємо як int
       ...authParams, // Certificate, PrivateKey, Password
     };
@@ -137,17 +157,23 @@ class CashalotApiClient {
 
   // Receipts
   /// Реєстрація чека згідно з документацією Cashalot
+  /// [numLocal] - локальний номер документа (обов'язковий для синхронізації)
+  /// [offline] - чи використовувати офлайн-режим (за замовчуванням false)
   Future<Map<String, dynamic>> registerCheck({
     required int prroFiscalNum,
+    required int numLocal,
     required Map<String, dynamic> checkHead,
     required List<Map<String, dynamic>> checkBody,
     required Map<String, dynamic> checkTotal,
     required List<Map<String, dynamic>> checkPay,
     required Map<String, dynamic> authParams,
+    bool offline = false,
   }) async {
     final payload = {
       'Command': 'RegisterCheck',
       'NumFiscal': prroFiscalNum, // Передаємо як int
+      'NumLocal': numLocal, // Локальний номер документа
+      'Offline': offline, // Примусово вимикаємо офлайн-режим для тестування
       ...authParams, // Certificate, PrivateKey, Password
       'Check': {
         // Вкладеність має бути саме такою
@@ -221,6 +247,20 @@ class CashalotApiClient {
     };
   }
 
+  // ЯДЕРНИЙ СКИНУТИ (Cleanup)
+  // Використовується при помилці InconsistentRegistrarState
+  Future<Map<String, dynamic>> cleanupPrro({
+    required int prroFiscalNum,
+    required Map<String, dynamic> authParams,
+  }) async {
+    final payload = {
+      'Command': 'Cleanup',
+      'NumFiscal': prroFiscalNum, // Каса, яку треба "полікувати"
+      ...authParams,
+    };
+    return _postWithKeys('', payload);
+  }
+
   /// POST запит з ключами (без токенів)
   Future<Map<String, dynamic>> _postWithKeys(
     String path,
@@ -235,8 +275,23 @@ class CashalotApiClient {
           body: jsonEncode(body),
         )
         .timeout(timeout);
+
+    // Перевіряємо чи відповідь не порожня
+    if (response.body.isEmpty || response.body.trim().isEmpty) {
+      throw Exception(
+        'Request failed: HTTP ${response.statusCode} - Empty response body',
+      );
+    }
+
     _ensureSuccess(response, 'Request failed');
-    return jsonDecode(response.body) as Map<String, dynamic>;
+
+    try {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception(
+        'Unable to parse JSON message: ${e.toString()}\nResponse body: ${response.body}',
+      );
+    }
   }
 
   Future<Map<String, dynamic>> _authorizedPost(
