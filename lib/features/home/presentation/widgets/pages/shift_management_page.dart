@@ -7,6 +7,9 @@ import '../../dialogs/close_shift_dialog.dart';
 import '../../../../../core/widgets/notificarion_toast/toast_manager.dart';
 import '../../../../../core/widgets/notificarion_toast/toast_type.dart';
 import '../../dialogs/x_report_dialog.dart';
+import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../home/data/datasources/shift_remote_data_source.dart';
 
 class ShiftManagementPage extends StatefulWidget {
   const ShiftManagementPage({super.key});
@@ -37,25 +40,33 @@ class _ShiftManagementPageState extends State<ShiftManagementPage> {
             current.xReportData != null;
       },
       listener: (context, state) {
-        // Якщо прийшли дані звіту - показуємо діалог
-        if (state.xReportData != null) {
-          showDialog(
-            context: context,
-            barrierDismissible: false, // Забороняємо закривати кліком повз
-            builder: (context) => XReportDialog(
-              reportData: state.xReportData!,
-              // ВАЖЛИВО: Передаємо візуалізацію з об'єкта звіту
-              // Переконайтесь, що ви додали це поле в модель XReportData (див. нижче)
-              visualization: state.xReportData!.visualization,
-              title: state.xReportData!.isZRep ? 'Z-Звіт (Закриття)' : 'X-Звіт',
-            ),
-          ).then((_) {
-            // Коли діалог закрився - очищаємо дані в блоці, щоб діалог не відкрився знову
-            if (context.mounted) {
-              context.read<HomeBloc>().add(const ClearXReportData());
-            }
-          });
+        // Обробка успіху очищення ПРРО
+        if (state.status == HomeStatus.cleanupSuccess) {
+          ToastManager.show(
+            context,
+            type: ToastType.success,
+            title: 'ПРРО успішно синхронізовано!',
+          );
         }
+        // Якщо прийшли дані звіту - показуємо діалог
+        // if (state.xReportData != null) {
+        //   showDialog(
+        //     context: context,
+        //     barrierDismissible: false, // Забороняємо закривати кліком повз
+        //     builder: (context) => XReportDialog(
+        //       reportData: state.xReportData!,
+        //       // ВАЖЛИВО: Передаємо візуалізацію з об'єкта звіту
+        //       // Переконайтесь, що ви додали це поле в модель XReportData (див. нижче)
+        //       visualization: state.xReportData!.visualization,
+        //       title: state.xReportData!.isZRep ? 'Z-Звіт (Закриття)' : 'X-Звіт',
+        //     ),
+        //   ).then((_) {
+        //     // Коли діалог закрився - очищаємо дані в блоці, щоб діалог не відкрився знову
+        //     if (context.mounted) {
+        //       context.read<HomeBloc>().add(const ClearXReportData());
+        //     }
+        //   });
+        // }
 
         // Обробка помилок
         if (state.status == HomeStatus.error && state.errorMessage.isNotEmpty) {
@@ -112,6 +123,16 @@ class _ShiftManagementPageState extends State<ShiftManagementPage> {
                         ),
                         _primaryButton(
                           context,
+                          label: 'Службова видача',
+                          color: Colors.blue,
+                          icon: Icons.account_balance_wallet_rounded,
+                          loading: loading,
+                          onPressed: () {
+                            _showServiceIssueDialog(context);
+                          },
+                        ),
+                        _primaryButton(
+                          context,
                           label: 'X-Звіт',
                           color: Colors.teal,
                           icon: Icons.receipt_long,
@@ -127,6 +148,47 @@ class _ShiftManagementPageState extends State<ShiftManagementPage> {
                           icon: Icons.lock_outline,
                           loading: loading,
                           onPressed: () => showCloseShiftDialog(context),
+                        ),
+                        _primaryButton(
+                          context,
+                          label: 'Очистити ПРРО(Синхронізація) Z-звіт',
+                          color: Colors.redAccent,
+                          icon: Icons.lock_outline,
+                          loading: loading,
+                          onPressed: () async {
+                            final shiftDataSource = ShiftRemoteDataSource(
+                              Supabase.instance.client,
+                            );
+                            // 1. Беремо останню відкриту зміну користувача
+                            final shift = await shiftDataSource
+                                .getLastOpenedShift();
+                            if (shift == null)
+                              throw Exception('Немає відкритої зміни');
+
+                            final shiftId = shift['id'] as int;
+                            final openingAmount =
+                                (shift['opening_amount'] as num?)?.toDouble() ??
+                                0.0;
+                            final openedAt = DateTime.parse(
+                              shift['opened_at'] as String,
+                            );
+
+                            // 2. Беремо суми по формі оплати (групування)
+                            final salesData = await shiftDataSource
+                                .getShiftSalesData(openedAt!);
+                            final salesCash = salesData['cash'] ?? 0.0;
+                            final salesCashless = salesData['cashless'] ?? 0.0;
+
+                            await shiftDataSource.closeShift(
+                              shiftId: shiftId,
+                              closingAmount: openingAmount,
+                              salesAmountCash: salesCash,
+                              salesAmountCashless: salesCashless,
+                            );
+                            context.read<HomeBloc>().add(
+                              const CleanupCashalotEvent(),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -182,8 +244,91 @@ class _ShiftManagementPageState extends State<ShiftManagementPage> {
     );
   }
 
+  Future<void> _showServiceIssueDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    return showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF2A2A2A),
+        title: const Text(
+          'Службова видача',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: SizedBox(
+          width: 400,
+          child: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: const TextStyle(color: Colors.white),
+
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+
+              TextInputFormatter.withFunction((oldValue, newValue) {
+                final text = newValue.text;
+
+                if (text.isEmpty) return newValue;
+
+                final dotCount = text.split('.').length - 1;
+                final commaCount = text.split(',').length - 1;
+
+                if (dotCount + commaCount > 1) {
+                  return oldValue;
+                }
+
+                if (text.contains('.') || text.contains(',')) {
+                  final split = text.split(RegExp(r'[.,]'));
+                  if (split.length > 1 && split[1].length > 2) {
+                    return oldValue;
+                  }
+                }
+
+                return newValue;
+              }),
+            ],
+
+            decoration: const InputDecoration(
+              labelText: 'Службова видача готівкових коштів на суму, грн',
+              labelStyle: TextStyle(color: Colors.white70),
+              suffixText: 'грн',
+              suffixStyle: TextStyle(color: Colors.white70),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Скасувати'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Ваша існуюча логіка обробки (вона залишається правильною)
+              final amount = double.tryParse(
+                controller.text.trim().replaceAll(',', '.'),
+              );
+
+              if (amount == null || amount < 0) {
+                ToastManager.show(
+                  ctx,
+                  type: ToastType.error,
+                  title: 'Некоректна сума',
+                );
+                return;
+              }
+
+              context.read<HomeBloc>().add(ServiceIssueEvent(amount: amount));
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Підтвердити'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _showServiceDepositDialog(BuildContext context) async {
     final controller = TextEditingController();
+
     return showDialog(
       context: context,
       builder: (ctx) {
@@ -193,13 +338,56 @@ class _ShiftManagementPageState extends State<ShiftManagementPage> {
             'Службове внесення',
             style: TextStyle(color: Colors.white),
           ),
-          content: TextField(
-            controller: controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
-              labelText: 'Сума, грн',
-              labelStyle: TextStyle(color: Colors.white70),
+          content: SizedBox(
+            width: 400,
+            child: TextField(
+              controller: controller,
+              // Вказуємо клавіатуру з крапкою/комою
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              style: const TextStyle(color: Colors.white),
+
+              // === ДОДАНО ВАЛІДАЦІЮ ===
+              inputFormatters: [
+                // 1. Дозволяємо вводити лише цифри, крапку та кому (забороняємо літери, пробіли, спецсимволи)
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+
+                // 2. Логіка для заборони двох крапок/ком та обмеження 2 знаків після коми
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  final text = newValue.text;
+
+                  // Якщо поле пусте - дозволяємо
+                  if (text.isEmpty) return newValue;
+
+                  // Перевіряємо, щоб не було більше однієї коми або крапки
+                  final dotCount = text.split('.').length - 1;
+                  final commaCount = text.split(',').length - 1;
+
+                  if (dotCount + commaCount > 1) {
+                    return oldValue; // Повертаємо старе значення (блокуємо введення)
+                  }
+
+                  // Перевіряємо, щоб після коми/крапки було не більше 2 цифр (для копійок)
+                  if (text.contains('.') || text.contains(',')) {
+                    final split = text.split(RegExp(r'[.,]'));
+                    if (split.length > 1 && split[1].length > 2) {
+                      return oldValue;
+                    }
+                  }
+
+                  return newValue;
+                }),
+              ],
+
+              // =========================
+              decoration: const InputDecoration(
+                labelText: 'Службове внесення готівкових коштів на суму, грн',
+                labelStyle: TextStyle(color: Colors.white70),
+                // Додаємо підказку або суфікс валюти
+                suffixText: 'грн',
+                suffixStyle: TextStyle(color: Colors.white70),
+              ),
             ),
           ),
           actions: [
@@ -209,9 +397,11 @@ class _ShiftManagementPageState extends State<ShiftManagementPage> {
             ),
             ElevatedButton(
               onPressed: () {
+                // Ваша існуюча логіка обробки (вона залишається правильною)
                 final amount = double.tryParse(
                   controller.text.trim().replaceAll(',', '.'),
                 );
+
                 if (amount == null || amount < 0) {
                   ToastManager.show(
                     ctx,
@@ -220,6 +410,7 @@ class _ShiftManagementPageState extends State<ShiftManagementPage> {
                   );
                   return;
                 }
+
                 context.read<HomeBloc>().add(
                   ServiceDepositEvent(amount: amount),
                 );

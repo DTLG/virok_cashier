@@ -92,6 +92,39 @@ class CashalotPrroAdapter implements PrroService {
   }
 
   @override
+  Future<XReportData?> printXReport({int? prroFiscalNum}) async {
+    try {
+      final fiscalNum = _getPrroFiscalNum(prroFiscalNum);
+      if (fiscalNum == null) {
+        debugPrint('❌ [CASHALOT_ADAPTER] Не вказано фіскальний номер ПРРО');
+        return null;
+      }
+
+      final response = await _cashalotService.printXReport(
+        prroFiscalNum: fiscalNum,
+      );
+      if (!response.isSuccess) {
+        debugPrint(
+          '❌ [CASHALOT_ADAPTER] Помилка printXReport: ${response.errorMessage}',
+        );
+        return null;
+      }
+
+      return XReportData(
+        task: 10,
+        visualization: response.visualization,
+        isZRep: false,
+        shiftOpened: response.shiftOpened,
+        serviceInput: response.serviceInput,
+        serviceOutput: response.serviceOutput,
+      );
+    } catch (e) {
+      debugPrint('❌ [CASHALOT_ADAPTER] Помилка printXReport: $e');
+      return null;
+    }
+  }
+
+  @override
   Future<XReportData?> closeShift({int? prroFiscalNum}) async {
     try {
       final fiscalNum = _getPrroFiscalNum(prroFiscalNum);
@@ -128,17 +161,7 @@ class CashalotPrroAdapter implements PrroService {
   }
 
   @override
-  Future<XReportData?> printXReport({int? prroFiscalNum}) async {
-    // CashalotService не має методу для X-звіту
-    // Можна буде додати якщо потрібно
-    debugPrint(
-      '⚠️ [CASHALOT_ADAPTER] printXReport не реалізовано для CashalotService',
-    );
-    return null;
-  }
-
-  @override
-  Future<void> serviceIn(
+  Future<XReportData?> serviceIn(
     double amount, {
     required String cashier,
     int? prroFiscalNum,
@@ -158,6 +181,7 @@ class CashalotPrroAdapter implements PrroService {
       if (!response.isSuccess) {
         throw Exception(response.errorMessage ?? 'Помилка службового внесення');
       }
+      return XReportData(visualization: response.visualization);
     } catch (e) {
       debugPrint('❌ [CASHALOT_ADAPTER] Помилка serviceIn: $e');
       rethrow;
@@ -165,7 +189,7 @@ class CashalotPrroAdapter implements PrroService {
   }
 
   @override
-  Future<void> serviceOut(
+  Future<XReportData?> serviceOut(
     double amount, {
     required String cashier,
     int? prroFiscalNum,
@@ -185,9 +209,18 @@ class CashalotPrroAdapter implements PrroService {
       if (!response.isSuccess) {
         throw Exception(response.errorMessage ?? 'Помилка службової видачі');
       }
+      return XReportData(visualization: response.visualization);
     } catch (e) {
       debugPrint('❌ [CASHALOT_ADAPTER] Помилка serviceOut: $e');
       rethrow;
     }
+  }
+
+  @override
+  Future<XReportData> cleanupCashalot({int? prroFiscalNum}) async {
+    final response = await _cashalotService.cleanupCashalot(
+      prroFiscalNum: prroFiscalNum ?? _defaultPrroFiscalNum!,
+    );
+    return XReportData(visualization: response.visualization);
   }
 }

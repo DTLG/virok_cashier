@@ -167,19 +167,18 @@ class _CloseShiftContentState extends State<_CloseShiftContent> {
           ) ??
           0.0;
 
-      // Зберігаємо закриття зміни в Supabase
-      final shiftDataSource = ShiftRemoteDataSource(Supabase.instance.client);
-      await shiftDataSource.closeShift(
-        shiftId: _shiftId!,
-        closingAmount: closingAmount,
-        salesAmountCash: _salesAmountCash,
-        salesAmountCashless: _salesAmountCashless,
-      );
-
       // Фіскальне закриття зміни (Z-звіт) через HomeBloc
       if (mounted && widget.rootContext.mounted) {
         final homeBloc = widget.rootContext.read<HomeBloc>();
         homeBloc.add(const CloseCashalotShift());
+        // Зберігаємо закриття зміни в Supabase
+        final shiftDataSource = ShiftRemoteDataSource(Supabase.instance.client);
+        await shiftDataSource.closeShift(
+          shiftId: _shiftId!,
+          closingAmount: closingAmount,
+          salesAmountCash: _salesAmountCash,
+          salesAmountCashless: _salesAmountCashless,
+        );
         Navigator.of(context).pop();
       }
 

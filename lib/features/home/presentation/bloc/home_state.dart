@@ -9,6 +9,8 @@ enum HomeStatus {
   putOffCheck,
   lastOpenedShiftOpen,
   lastOpenedShiftClosed,
+  cleanupCashalot,
+  cleanupSuccess,
 }
 
 class HomeViewState extends Equatable {

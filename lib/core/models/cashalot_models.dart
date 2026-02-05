@@ -10,6 +10,11 @@ class CashalotResponse {
   final String? visualization; // Текстовий вигляд чека
   final int? shiftState; // Стан зміни: 0 - закрита, 1 - відкрита
 
+  // Нові поля
+  final DateTime? shiftOpened; // Час відкриття зміни
+  final double? serviceInput; // Службове внесення
+  final double? serviceOutput; // Службова видача (за компанію додамо і це)
+
   CashalotResponse({
     this.errorCode,
     this.errorMessage,
@@ -17,6 +22,9 @@ class CashalotResponse {
     this.qrCode,
     this.visualization,
     this.shiftState,
+    this.shiftOpened,
+    this.serviceInput,
+    this.serviceOutput,
   });
 
   bool get isSuccess => errorCode == null || errorCode == 'Ok';

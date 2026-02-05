@@ -9,6 +9,7 @@ import 'core/services/app_initialization_service.dart';
 import 'core/services/storage_service.dart';
 import 'features/settings/presentation/bloc/settings_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'features/home/presentation/bloc/home_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,16 +69,32 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        try {
-          return AppInitializationService.get<SettingsBloc>();
-        } catch (e) {
-          print('Error getting SettingsBloc: $e');
-          // Повертаємо новий SettingsBloc як fallback
-          return SettingsBloc(storageService: StorageService());
-        }
-      },
+    return
+    //  MultiBlocProvider(
+    //   create: (context) {
+    //     try {
+    //       return AppInitializationService.get<SettingsBloc>();
+    //     } catch (e) {
+    //       print('Error getting SettingsBloc: $e');
+    //       // Повертаємо новий SettingsBloc як fallback
+    //       return SettingsBloc(storageService: StorageService());
+    //     }
+    //   },
+    MultiBlocProvider(
+      providers: [
+        // 1. Settings Bloc
+        BlocProvider<SettingsBloc>(
+          create: (_) => AppInitializationService.get<SettingsBloc>(),
+        ),
+
+        // 2. Home Bloc (Додаємо сюди!)
+        BlocProvider<HomeBloc>(
+          create: (context) => AppInitializationService.get<HomeBloc>()
+            ..add(
+              GetAvailablePrrosInfo(),
+            ), // Запускаємо отримання кас при старті
+        ),
+      ],
       child: MaterialApp(
         title: 'Каса Virok',
         debugShowCheckedModeBanner: false,

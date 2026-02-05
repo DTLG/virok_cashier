@@ -59,6 +59,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     on<ServiceIssueEvent>(_onServiceIssue);
     on<XReportEvent>(_onXReport);
     on<ClearXReportData>(_onClearXReportData);
+    on<CleanupCashalotEvent>(_onCleanupCashalot);
   }
 
   /// Публічний метод для тестового депозиту (для використання з інших модулів)
@@ -268,11 +269,265 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     emit(state.copyWith(paymentForm: event.paymentForm));
   }
 
+  // Future<void> _onCheckout(
+  //   CheckoutEvent event,
+  //   Emitter<HomeViewState> emit,
+  // ) async {
+  //   try {
+  //     emit(state.copyWith(status: HomeStatus.loading));
+
+  //     final cashierName =
+  //         state.user?.name ??
+  //         (await storageService.getUserEmail())?.split('@')[0] ??
+  //         'Касир';
+
+  //     if (state.cart.isEmpty) {
+  //       throw Exception('Кошик порожній');
+  //     }
+
+  //     // Отримуємо активну касу
+  //     final prroFiscalNum = await _getActivePrroFiscalNum();
+  //     debugPrint('📋 [CHECKOUT] Використовується ПРРО: $prroFiscalNum');
+
+  //     // Формуємо тіло чека з кошика
+  //     debugPrint(
+  //       '🛒 [CHECKOUT] Формування чека з кошика (${state.cart.length} товарів)...',
+  //     );
+  //     final checkBody = state.cart
+  //         .map(
+  //           (item) => CheckBodyRow(
+  //             code: item.article.isNotEmpty ? item.article : item.guid,
+  //             name: item.name,
+  //             amount: item.quantity.toDouble(),
+  //             price: item.price,
+  //           ),
+  //         )
+  //         .toList();
+
+  //     final totalSum = checkBody.fold(0.0, (sum, item) => sum + item.cost);
+
+  //     // Формуємо CheckPayload
+  //     final checkPayload = CheckPayload(
+  //       checkHead: CheckHead(
+  //         docType: "SaleGoods",
+  //         docSubType: "CheckGoods",
+  //         cashier: cashierName,
+  //       ),
+  //       checkTotal: CheckTotal(sum: totalSum),
+  //       checkBody: checkBody,
+  //       checkPay: [
+  //         CheckPayRow(
+  //           payFormNm: state.paymentForm, // "ГОТІВКА" або "КАРТКА"
+  //           sum: totalSum,
+  //         ),
+  //       ],
+  //     );
+
+  //     // Логуємо тіло запиту
+  //     debugPrint('📤 [CHECKOUT] Тіло запиту (CheckPayload):');
+  //     debugPrint('   Касир: $cashierName');
+  //     debugPrint('   Тип документа: ${checkPayload.checkHead.docType}');
+  //     debugPrint('   Підтип: ${checkPayload.checkHead.docSubType}');
+  //     debugPrint('   Сума: ${checkPayload.checkTotal.sum} UAH');
+  //     debugPrint('   Метод оплати: ${checkPayload.checkPay.first.payFormNm}');
+  //     debugPrint('   Товарів: ${checkPayload.checkBody.length}');
+  //     for (var i = 0; i < checkPayload.checkBody.length; i++) {
+  //       final item = checkPayload.checkBody[i];
+  //       debugPrint(
+  //         '     ${i + 1}. ${item.name} x${item.amount} = ${item.cost} UAH',
+  //       );
+  //     }
+  //     debugPrint('📦 [CHECKOUT] JSON тіло запиту:');
+  //     debugPrint(
+  //       const JsonEncoder.withIndent('  ').convert(checkPayload.toJson()),
+  //     );
+
+  //     // Якщо обрано оплату КАРТКОЮ – спочатку проводимо операцію через термінал
+  //     if (state.paymentForm.toUpperCase().contains('КАРТ')) {
+  //       debugPrint(
+  //         '💳 [CHECKOUT] Обрано оплату карткою – запускаємо TerminalPaymentService',
+  //       );
+
+  //       // КРОК 1: task 6 – запит на оплату з очікуванням підтвердження
+  //       final preAuthResult = await terminalPaymentService.requestCardPreAuth(
+  //         amount: totalSum,
+  //       );
+
+  //       if (!preAuthResult.success) {
+  //         debugPrint(
+  //           '❌ [CHECKOUT] Помилка на етапі pre-auth (task 6): ${preAuthResult.message}',
+  //         );
+  //         emit(
+  //           state.copyWith(
+  //             status: HomeStatus.error,
+  //             errorMessage: preAuthResult.message ?? 'Помилка оплати карткою',
+  //           ),
+  //         );
+  //         return;
+  //       }
+
+  //       final cardInfo = preAuthResult.cardInfo;
+  //       if (cardInfo != null) {
+  //         debugPrint('💳 [CHECKOUT] Картка: ${cardInfo.cardMask}');
+  //         debugPrint(
+  //           '💳 [CHECKOUT] Платіжна система: ${cardInfo.paymentSystem}',
+  //         );
+  //         debugPrint('💳 [CHECKOUT] Банк: ${cardInfo.bankName}');
+  //       }
+
+  //       // TODO: тут можна додати свою бізнес-логіку перевірки карти
+  //       // (наприклад, заблоковані BIN-и, власні правила лояльності тощо)
+
+  //       // КРОК 2: task 7 – підтверджуємо оплату по картці
+  //       final finishResult = await terminalPaymentService.finishCardPayment(
+  //         approve: true,
+  //         overrideAmount: totalSum,
+  //       );
+
+  //       if (!finishResult.success) {
+  //         debugPrint(
+  //           '❌ [CHECKOUT] Помилка на етапі підтвердження (task 7): ${finishResult.message}',
+  //         );
+  //         emit(
+  //           state.copyWith(
+  //             status: HomeStatus.error,
+  //             errorMessage:
+  //                 finishResult.message ?? 'Помилка завершення оплати карткою',
+  //           ),
+  //         );
+  //         return;
+  //       }
+
+  //       debugPrint(
+  //         '✅ [CHECKOUT] Оплата по картці успішно проведена на терміналі',
+  //       );
+
+  //       // Друкуємо банківський сліп (термінальний чек) перед фіскальним чеком
+  //       final String? slipText = finishResult.bankReceiptText;
+  //       if (slipText != null && slipText.isNotEmpty) {
+  //         debugPrint(
+  //           "🖨️ [CHECKOUT] Отримано текст банківського сліпа, друкуємо...",
+  //         );
+  //         try {
+  //           // Отримуємо налаштування принтера з SharedPreferences
+  //           final printerIp =
+  //               await storageService.getString('printer_ip') ??
+  //               VchasnoConfig.printerIp;
+  //           final printerPort =
+  //               await storageService.getInt('printer_port') ??
+  //               VchasnoConfig.printerPort;
+
+  //           // Друкуємо ПЕРШУ копію (Клієнт)
+  //           await _rawPrinterService.printBankSlip(
+  //             printerIp: printerIp,
+  //             slipText: slipText,
+  //             port: printerPort,
+  //           );
+  //           debugPrint("✅ [CHECKOUT] Банківський сліп (клієнт) надруковано");
+
+  //           // Друкуємо ДРУГУ копію (Мерчант) з паузою
+  //           await Future.delayed(const Duration(seconds: 2));
+  //           await _rawPrinterService.printBankSlip(
+  //             printerIp: printerIp,
+  //             slipText: slipText,
+  //             port: printerPort,
+  //           );
+  //           debugPrint("✅ [CHECKOUT] Банківський сліп (мерчант) надруковано");
+  //         } catch (e) {
+  //           debugPrint("⚠️ [CHECKOUT] Помилка друку банківського сліпа: $e");
+  //           // Не перериваємо процес, якщо друк сліпа не вдався
+  //           // Фіскалізація все одно має пройти
+  //         }
+  //       } else {
+  //         debugPrint(
+  //           "⚠️ [CHECKOUT] Банк не повернув текст чека "
+  //           "(можливо, він друкується самим терміналом?)",
+  //         );
+  //       }
+  //     }
+
+  //     // Після успішної (або готівкової) оплати проводимо фіскалізацію через ПРРО
+  //     debugPrint('🚀 [CHECKOUT] Відправка запиту printSale до PrroService...');
+  //     final fiscalResult = await prroService.printSale(checkPayload);
+
+  //     if (!fiscalResult.success) {
+  //       debugPrint(
+  //         '❌ [CHECKOUT] Помилка реєстрації чека: ${fiscalResult.message}',
+  //       );
+  //       // Зберігаємо помилку для показу діалогу
+  //       emit(
+  //         state.copyWith(
+  //           status: HomeStatus.error,
+  //           errorMessage: fiscalResult.message,
+  //           vchasnoError: fiscalResult.error,
+  //           fiscalResult: fiscalResult,
+  //         ),
+  //       );
+  //       return;
+  //     }
+
+  //     debugPrint('✅ [CHECKOUT] Чек успішно зареєстровано через Вчасно!');
+
+  //     // Зберігаємо чек в Supabase для історії
+  //     debugPrint('💾 [CHECKOUT] Збереження чека в Supabase...');
+  //     final items = state.cart.map((c) {
+  //       final amount = c.quantity * c.price;
+  //       return {
+  //         'product_code': c.article.isNotEmpty ? c.article : c.guid,
+  //         'product_name': c.name,
+  //         'unit': 'шт',
+  //         'quantity': c.quantity,
+  //         'price': c.price,
+  //         'discount_percent': 0,
+  //         'amount': amount,
+  //         'seller': cashierName,
+  //       };
+  //     }).toList();
+
+  //     final checkId = await checkRemoteDataSource.createCheck(
+  //       amount: totalSum,
+  //       paymentForm: state.paymentForm,
+  //       seller: state.user?.email ?? '',
+  //     );
+  //     debugPrint('   ID чека в Supabase: $checkId');
+
+  //     await checkRemoteDataSource.insertCheckItems(checkId, items);
+  //     debugPrint('   Збережено ${items.length} товарів');
+
+  //     // Очистити кошик після успішного проведення чеку та зберегти результат для показу QR
+  //     // Оновлюємо fiscalResult з сумою чека
+  //     final finalResult = FiscalResult.success(
+  //       message: fiscalResult.message,
+  //       qrUrl: fiscalResult.qrUrl,
+  //       docNumber: fiscalResult.docNumber,
+  //       totalAmount: totalSum,
+  //     );
+
+  //     emit(
+  //       state.copyWith(
+  //         cart: const [],
+  //         status: HomeStatus.checkedOut,
+  //         fiscalResult: finalResult, // Зберігаємо для показу QR-коду
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     emit(
+  //       state.copyWith(
+  //         status: HomeStatus.error,
+  //         errorMessage: e.toString(),
+  //         vchasnoError: null,
+  //         fiscalResult: null,
+  //       ),
+  //     );
+  //   }
+  // }
+
   Future<void> _onCheckout(
     CheckoutEvent event,
     Emitter<HomeViewState> emit,
   ) async {
     try {
+      // 1. Блокуємо інтерфейс
       emit(state.copyWith(status: HomeStatus.loading));
 
       final cashierName =
@@ -284,14 +539,65 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
         throw Exception('Кошик порожній');
       }
 
-      // Отримуємо активну касу
+      // 2. Отримуємо фіскальний номер
       final prroFiscalNum = await _getActivePrroFiscalNum();
-      debugPrint('📋 [CHECKOUT] Використовується ПРРО: $prroFiscalNum');
+      debugPrint('📋 [CHECKOUT] ПРРО: $prroFiscalNum, Касир: $cashierName');
 
-      // Формуємо тіло чека з кошика
-      debugPrint(
-        '🛒 [CHECKOUT] Формування чека з кошика (${state.cart.length} товарів)...',
+      // 3. Рахуємо загальну суму
+      final totalSum = state.cart.fold(
+        0.0,
+        (sum, item) => sum + (item.price * item.quantity),
       );
+
+      // 4. Етап Оплати (Банківський термінал)
+      // Якщо оплата карткою - спочатку знімаємо гроші
+      // if (state.paymentForm.toUpperCase().contains('КАРТ')) {
+      //   debugPrint('💳 [CHECKOUT] Старт оплати карткою...');
+
+      //   // 4.1. Pre-Auth
+      //   final preAuth = await terminalPaymentService.requestCardPreAuth(
+      //     amount: totalSum,
+      //   );
+      //   if (!preAuth.success) {
+      //     emit(
+      //       state.copyWith(
+      //         status: HomeStatus.error,
+      //         errorMessage:
+      //             preAuth.message ?? 'Помилка з\'єднання з терміналом',
+      //       ),
+      //     );
+      //     return;
+      //   }
+
+      //   // 4.2. Finish Payment
+      //   final payment = await terminalPaymentService.finishCardPayment(
+      //     approve: true,
+      //     overrideAmount: totalSum,
+      //   );
+
+      //   if (!payment.success) {
+      //     emit(
+      //       state.copyWith(
+      //         status: HomeStatus.error,
+      //         errorMessage: payment.message ?? 'Оплата карткою не пройшла',
+      //       ),
+      //     );
+      //     return;
+      //   }
+
+      //   debugPrint('✅ [CHECKOUT] Оплата карткою успішна');
+
+      //   // 4.3. Друк сліпів (не блокує фіскалізацію при помилці)
+      //   if (payment.bankReceiptText != null) {
+      //     _printBankSlips(payment.bankReceiptText!);
+      //   }
+      // }
+
+      // 5. Етап Фіскалізації (Cashalot)
+      debugPrint('🚀 [CHECKOUT] Підготовка даних для ПРРО...');
+
+      // Формуємо Payload (використовуємо твої існуючі моделі CheckPayload,
+      // а PrroService всередині перетворить їх в CashalotRegisterCheckRequest)
       final checkBody = state.cart
           .map(
             (item) => CheckBodyRow(
@@ -299,14 +605,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
               name: item.name,
               amount: item.quantity.toDouble(),
               price: item.price,
+              // cost розрахується автоматично або в PrroService
             ),
           )
           .toList();
 
-      final totalSum = checkBody.fold(0.0, (sum, item) => sum + item.cost);
-
-      // Формуємо CheckPayload
-      final checkPayload = CheckPayload(
+      final payload = CheckPayload(
         checkHead: CheckHead(
           docType: "SaleGoods",
           docSubType: "CheckGoods",
@@ -322,202 +626,109 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
         ],
       );
 
-      // Логуємо тіло запиту
-      debugPrint('📤 [CHECKOUT] Тіло запиту (CheckPayload):');
-      debugPrint('   Касир: $cashierName');
-      debugPrint('   Тип документа: ${checkPayload.checkHead.docType}');
-      debugPrint('   Підтип: ${checkPayload.checkHead.docSubType}');
-      debugPrint('   Сума: ${checkPayload.checkTotal.sum} UAH');
-      debugPrint('   Метод оплати: ${checkPayload.checkPay.first.payFormNm}');
-      debugPrint('   Товарів: ${checkPayload.checkBody.length}');
-      for (var i = 0; i < checkPayload.checkBody.length; i++) {
-        final item = checkPayload.checkBody[i];
-        debugPrint(
-          '     ${i + 1}. ${item.name} x${item.amount} = ${item.cost} UAH',
-        );
-      }
-      debugPrint('📦 [CHECKOUT] JSON тіло запиту:');
-      debugPrint(
-        const JsonEncoder.withIndent('  ').convert(checkPayload.toJson()),
-      );
-
-      // Якщо обрано оплату КАРТКОЮ – спочатку проводимо операцію через термінал
-      if (state.paymentForm.toUpperCase().contains('КАРТ')) {
-        debugPrint(
-          '💳 [CHECKOUT] Обрано оплату карткою – запускаємо TerminalPaymentService',
-        );
-
-        // КРОК 1: task 6 – запит на оплату з очікуванням підтвердження
-        final preAuthResult = await terminalPaymentService.requestCardPreAuth(
-          amount: totalSum,
-        );
-
-        if (!preAuthResult.success) {
-          debugPrint(
-            '❌ [CHECKOUT] Помилка на етапі pre-auth (task 6): ${preAuthResult.message}',
-          );
-          emit(
-            state.copyWith(
-              status: HomeStatus.error,
-              errorMessage: preAuthResult.message ?? 'Помилка оплати карткою',
-            ),
-          );
-          return;
-        }
-
-        final cardInfo = preAuthResult.cardInfo;
-        if (cardInfo != null) {
-          debugPrint('💳 [CHECKOUT] Картка: ${cardInfo.cardMask}');
-          debugPrint(
-            '💳 [CHECKOUT] Платіжна система: ${cardInfo.paymentSystem}',
-          );
-          debugPrint('💳 [CHECKOUT] Банк: ${cardInfo.bankName}');
-        }
-
-        // TODO: тут можна додати свою бізнес-логіку перевірки карти
-        // (наприклад, заблоковані BIN-и, власні правила лояльності тощо)
-
-        // КРОК 2: task 7 – підтверджуємо оплату по картці
-        final finishResult = await terminalPaymentService.finishCardPayment(
-          approve: true,
-          overrideAmount: totalSum,
-        );
-
-        if (!finishResult.success) {
-          debugPrint(
-            '❌ [CHECKOUT] Помилка на етапі підтвердження (task 7): ${finishResult.message}',
-          );
-          emit(
-            state.copyWith(
-              status: HomeStatus.error,
-              errorMessage:
-                  finishResult.message ?? 'Помилка завершення оплати карткою',
-            ),
-          );
-          return;
-        }
-
-        debugPrint(
-          '✅ [CHECKOUT] Оплата по картці успішно проведена на терміналі',
-        );
-
-        // Друкуємо банківський сліп (термінальний чек) перед фіскальним чеком
-        final String? slipText = finishResult.bankReceiptText;
-        if (slipText != null && slipText.isNotEmpty) {
-          debugPrint(
-            "🖨️ [CHECKOUT] Отримано текст банківського сліпа, друкуємо...",
-          );
-          try {
-            // Отримуємо налаштування принтера з SharedPreferences
-            final printerIp =
-                await storageService.getString('printer_ip') ??
-                VchasnoConfig.printerIp;
-            final printerPort =
-                await storageService.getInt('printer_port') ??
-                VchasnoConfig.printerPort;
-
-            // Друкуємо ПЕРШУ копію (Клієнт)
-            await _rawPrinterService.printBankSlip(
-              printerIp: printerIp,
-              slipText: slipText,
-              port: printerPort,
-            );
-            debugPrint("✅ [CHECKOUT] Банківський сліп (клієнт) надруковано");
-
-            // Друкуємо ДРУГУ копію (Мерчант) з паузою
-            await Future.delayed(const Duration(seconds: 2));
-            await _rawPrinterService.printBankSlip(
-              printerIp: printerIp,
-              slipText: slipText,
-              port: printerPort,
-            );
-            debugPrint("✅ [CHECKOUT] Банківський сліп (мерчант) надруковано");
-          } catch (e) {
-            debugPrint("⚠️ [CHECKOUT] Помилка друку банківського сліпа: $e");
-            // Не перериваємо процес, якщо друк сліпа не вдався
-            // Фіскалізація все одно має пройти
-          }
-        } else {
-          debugPrint(
-            "⚠️ [CHECKOUT] Банк не повернув текст чека "
-            "(можливо, він друкується самим терміналом?)",
-          );
-        }
-      }
-
-      // Після успішної (або готівкової) оплати проводимо фіскалізацію через ПРРО
-      debugPrint('🚀 [CHECKOUT] Відправка запиту printSale до PrroService...');
-      final fiscalResult = await prroService.printSale(checkPayload);
+      // Викликаємо сервіс
+      final fiscalResult = await prroService.printSale(payload);
 
       if (!fiscalResult.success) {
-        debugPrint(
-          '❌ [CHECKOUT] Помилка реєстрації чека: ${fiscalResult.message}',
-        );
-        // Зберігаємо помилку для показу діалогу
-        emit(
-          state.copyWith(
-            status: HomeStatus.error,
-            errorMessage: fiscalResult.message,
-            vchasnoError: fiscalResult.error,
-            fiscalResult: fiscalResult,
-          ),
-        );
-        return;
+        throw Exception(fiscalResult.message ?? 'Помилка фіскалізації');
       }
 
-      debugPrint('✅ [CHECKOUT] Чек успішно зареєстровано через Вчасно!');
+      debugPrint(
+        '✅ [CHECKOUT] Чек фіскалізовано! Номер: ${fiscalResult.docNumber}',
+      );
 
-      // Зберігаємо чек в Supabase для історії
-      debugPrint('💾 [CHECKOUT] Збереження чека в Supabase...');
-      final items = state.cart.map((c) {
-        final amount = c.quantity * c.price;
-        return {
-          'product_code': c.article.isNotEmpty ? c.article : c.guid,
-          'product_name': c.name,
-          'unit': 'шт',
-          'quantity': c.quantity,
-          'price': c.price,
-          'discount_percent': 0,
-          'amount': amount,
-          'seller': cashierName,
-        };
-      }).toList();
-
-      final checkId = await checkRemoteDataSource.createCheck(
-        amount: totalSum,
+      // 6. Збереження в БД (Supabase)
+      await _saveCheckToDatabase(
+        cart: state.cart,
+        totalSum: totalSum,
         paymentForm: state.paymentForm,
-        seller: state.user?.email ?? '',
-      );
-      debugPrint('   ID чека в Supabase: $checkId');
-
-      await checkRemoteDataSource.insertCheckItems(checkId, items);
-      debugPrint('   Збережено ${items.length} товарів');
-
-      // Очистити кошик після успішного проведення чеку та зберегти результат для показу QR
-      // Оновлюємо fiscalResult з сумою чека
-      final finalResult = FiscalResult.success(
-        message: fiscalResult.message,
-        qrUrl: fiscalResult.qrUrl,
-        docNumber: fiscalResult.docNumber,
-        totalAmount: totalSum,
+        cashierName: cashierName,
+        fiscalNumber: fiscalResult.docNumber,
       );
 
+      // 7. Успішне завершення
       emit(
         state.copyWith(
-          cart: const [],
+          cart: const [], // Очищаємо кошик
           status: HomeStatus.checkedOut,
-          fiscalResult: finalResult, // Зберігаємо для показу QR-коду
+          fiscalResult:
+              fiscalResult, // Дані для відображення QR та SuccessDialog
         ),
       );
     } catch (e) {
+      debugPrint('❌ [CHECKOUT ERROR] $e');
       emit(
         state.copyWith(
           status: HomeStatus.error,
-          errorMessage: e.toString(),
-          vchasnoError: null,
-          fiscalResult: null,
+          errorMessage: e.toString().replaceAll('Exception:', '').trim(),
         ),
       );
+    }
+  }
+
+  // Допоміжний метод для друку сліпів
+  Future<void> _printBankSlips(String slipText) async {
+    try {
+      final ip =
+          await storageService.getString('printer_ip') ??
+          VchasnoConfig.printerIp;
+      final port =
+          await storageService.getInt('printer_port') ??
+          VchasnoConfig.printerPort;
+
+      // Клієнтський чек
+      await _rawPrinterService.printBankSlip(
+        printerIp: ip,
+        port: port,
+        slipText: slipText,
+      );
+      await Future.delayed(const Duration(seconds: 2));
+      // Мерчант чек
+      await _rawPrinterService.printBankSlip(
+        printerIp: ip,
+        port: port,
+        slipText: slipText,
+      );
+    } catch (e) {
+      debugPrint('⚠️ Помилка друку сліпа: $e');
+    }
+  }
+
+  // Допоміжний метод для збереження в БД
+  Future<void> _saveCheckToDatabase({
+    required List<CartItem> cart,
+    required double totalSum,
+    required String paymentForm,
+    required String cashierName,
+    String? fiscalNumber,
+  }) async {
+    try {
+      final checkId = await checkRemoteDataSource.createCheck(
+        amount: totalSum,
+        paymentForm: paymentForm,
+        seller: state.user?.email ?? '',
+        // status: 'Fiscalized', // Можна додати статус
+      );
+
+      final items = cart
+          .map(
+            (c) => {
+              'check_id': checkId,
+              'product_code': c.article.isNotEmpty ? c.article : c.guid,
+              'product_name': c.name,
+              'unit': 'шт',
+              'quantity': c.quantity,
+              'price': c.price,
+              'amount': c.quantity * c.price,
+              'seller': cashierName,
+            },
+          )
+          .toList();
+
+      await checkRemoteDataSource.insertCheckItems(checkId, items);
+    } catch (e) {
+      debugPrint('⚠️ Помилка збереження чека в БД: $e');
+      // Не кидаємо помилку далі, бо чек вже фіскалізовано
     }
   }
 
@@ -596,15 +807,19 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
       emit(state.copyWith(status: HomeStatus.loading));
       // debugPrint('🔓 [OPEN_SHIFT] Вчасно не потребує відкриття зміни окремо');
       await prroService.openShift();
-      debugPrint('✅ [OPEN_SHIFT] Готово до роботи');
-      // Отримуємо X-звіт, але не зберігаємо в стані (не показуємо діалог)
-      await prroService.printXReport();
-      emit(
-        state.copyWith(
-          status: HomeStatus.loggedIn,
-          openedShiftAt: DateTime.now(),
-        ),
-      );
+      if (event.amount > 0) {
+        await prroService.serviceIn(
+          event.amount,
+          cashier: state.user?.name ?? '',
+        );
+        debugPrint('✅ [OPEN_SHIFT] Готово до роботи');
+        emit(
+          state.copyWith(
+            status: HomeStatus.loggedIn,
+            openedShiftAt: DateTime.now(),
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('❌ [OPEN_SHIFT] Помилка: $e');
       emit(
@@ -688,7 +903,17 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
       );
       debugPrint('   Сума: ${event.amount} UAH');
       debugPrint('   Касир: $cashierName');
-      await prroService.serviceIn(event.amount, cashier: cashierName);
+      final reportData = await prroService.serviceIn(
+        event.amount,
+        cashier: cashierName,
+      );
+      if (reportData != null) {
+        debugPrint('✅ [SERVICE_DEPOSIT] Службове внесення успішно виконано!');
+        emit(state.copyWith(xReportData: reportData));
+      } else {
+        debugPrint('❌ [SERVICE_DEPOSIT] Не вдалося отримати звіт');
+        emit(state.copyWith(status: HomeStatus.error));
+      }
 
       debugPrint('✅ [SERVICE_DEPOSIT] Службове внесення успішно виконано!');
 
@@ -714,15 +939,17 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
           state.user?.name ??
           (await storageService.getUserEmail())?.split('@')[0] ??
           'Касир';
-      debugPrint('   Касир: $cashierName');
-      debugPrint('   Сума: ${event.amount} UAH');
-
-      debugPrint(
-        '🚀 [SERVICE_ISSUE] Відправка запиту serviceOut до PrroService...',
+      final reportData = await prroService.serviceOut(
+        event.amount,
+        cashier: cashierName,
       );
-      debugPrint('   Сума: ${event.amount} UAH');
-      debugPrint('   Касир: $cashierName');
-      await prroService.serviceOut(event.amount, cashier: cashierName);
+      if (reportData != null) {
+        debugPrint('✅ [SERVICE_ISSUE] Службова видача успішно виконано!');
+        emit(state.copyWith(xReportData: reportData));
+      } else {
+        debugPrint('❌ [SERVICE_ISSUE] Не вдалося отримати звіт');
+        emit(state.copyWith(status: HomeStatus.error));
+      }
 
       debugPrint('✅ [SERVICE_ISSUE] Службова видача успішно виконано!');
       emit(state.copyWith(status: HomeStatus.loggedIn));
@@ -768,5 +995,47 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     Emitter<HomeViewState> emit,
   ) {
     emit(state.copyWith(clearXReportData: true));
+  }
+
+  Future<void> _onCleanupCashalot(
+    CleanupCashalotEvent event,
+    Emitter<HomeViewState> emit,
+  ) async {
+    try {
+      emit(state.copyWith(status: HomeStatus.loading));
+      debugPrint('🔄 [CLEANUP_CASHALOT] Початок очищення ПРРО...');
+
+      final prroFiscalNum =
+          event.prroFiscalNum ?? await _getActivePrroFiscalNum();
+
+      final response = await prroService.cleanupCashalot(
+        prroFiscalNum: prroFiscalNum,
+      );
+
+      if (response.visualization != null) {
+        debugPrint('✅ [CLEANUP_CASHALOT] Очищення ПРРО успішно виконано!');
+
+        // Емітимо спеціальний статус успіху
+        emit(
+          state.copyWith(
+            status: HomeStatus.cleanupSuccess,
+            xReportData: response,
+            clearOpenedShiftAt: true,
+          ),
+        );
+
+        // Одразу повертаємо статус у звичайний режим, щоб не блокувати UI
+        // (Але Flutter встигне відмалювати реакцію на cleanupSuccess)
+        emit(state.copyWith(status: HomeStatus.loggedIn));
+      } else {
+        debugPrint('❌ [CLEANUP_CASHALOT] Не вдалося очистити ПРРО');
+        emit(state.copyWith(status: HomeStatus.error));
+      }
+    } catch (e) {
+      debugPrint('❌ [CLEANUP_CASHALOT] Помилка: $e');
+      emit(
+        state.copyWith(status: HomeStatus.error, errorMessage: e.toString()),
+      );
+    }
   }
 }

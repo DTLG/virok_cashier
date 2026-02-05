@@ -113,6 +113,26 @@ class CashalotApiClient {
     return _postWithKeys('', payload);
   }
 
+  /// Приведення локального стану ПРРО у відповідність до стану на сервері
+  /// Документація: стор. 17
+  Future<Map<String, dynamic>> cleanup({
+    required int prroFiscalNum,
+    required Map<String, dynamic> authParams,
+    bool remove = false, // За замовчуванням false (просто синхронізація)
+    bool visualization = true, // Отримати Z-звіт, якщо зміна закриється
+  }) async {
+    final payload = {
+      'Command': 'Cleanup',
+      'NumFiscal': prroFiscalNum,
+      'Remove': remove,
+      'Visualization': visualization,
+      ...authParams,
+    };
+
+    // _postWithKeys - ваш метод відправки запиту
+    return _postWithKeys('', payload);
+  }
+
   // Info
   /// Отримання списку доступних об'єктів (Objects)
   /// Повертає всі ПРРО, доступні для даного ключа
@@ -155,13 +175,27 @@ class CashalotApiClient {
     return _postWithKeys('', payload);
   }
 
+  Future<Map<String, dynamic>> printXReport({
+    required int prroFiscalNum,
+    required Map<String, dynamic> authParams,
+  }) async {
+    {}
+
+    final payload = {
+      'Command': 'LastShiftTotals',
+      'NumFiscal': prroFiscalNum, // Передаємо як int
+      "Visualization": true,
+      ...authParams, // Certificate, PrivateKey, Password
+    };
+    return _postWithKeys('', payload);
+  }
+
   // Receipts
   /// Реєстрація чека згідно з документацією Cashalot
   /// [numLocal] - локальний номер документа (обов'язковий для синхронізації)
   /// [offline] - чи використовувати офлайн-режим (за замовчуванням false)
-  Future<Map<String, dynamic>> registerCheck({
+  Future<Map<String, dynamic>> registerDeposit({
     required int prroFiscalNum,
-    required int numLocal,
     required Map<String, dynamic> checkHead,
     required List<Map<String, dynamic>> checkBody,
     required Map<String, dynamic> checkTotal,
@@ -172,17 +206,30 @@ class CashalotApiClient {
     final payload = {
       'Command': 'RegisterCheck',
       'NumFiscal': prroFiscalNum, // Передаємо як int
-      'NumLocal': numLocal, // Локальний номер документа
-      'Offline': offline, // Примусово вимикаємо офлайн-режим для тестування
       ...authParams, // Certificate, PrivateKey, Password
-      'Check': {
-        // Вкладеність має бути саме такою
-        'CHECKHEAD': checkHead,
-        'CHECKBODY': checkBody,
-        'CHECKTOTAL': checkTotal,
-        'CHECKPAY': checkPay,
-      },
-      'GetQrCode': true, // Корисно додати для отримання QR
+      'Check': {'CHECKHEAD': checkHead, 'CHECKTOTAL': checkTotal},
+      'Visualization': true,
+    };
+    return _postWithKeys('', payload);
+  }
+
+  Future<Map<String, dynamic>> registerCheck({
+    required int prroFiscalNum,
+    required Map<String, dynamic> checkData, // <--- Приймає Map
+    required Map<String, dynamic> authParams,
+    bool autoOpenShift = true,
+    bool getQrCode = true,
+    bool visualization = true,
+    bool offline = false,
+  }) async {
+    final payload = {
+      "Command": "RegisterCheck",
+      "NumFiscal": prroFiscalNum,
+      "Check": checkData, // <--- Вставляє його сюди
+      "AutoOpenShift": autoOpenShift,
+      "GetQrCode": getQrCode,
+      "Visualization": visualization,
+      ...authParams,
     };
     return _postWithKeys('', payload);
   }

@@ -57,4 +57,9 @@ abstract class CashalotService {
   /// Закриття зміни (Z-звіт)
   /// [prroFiscalNum] - фіскальний номер ПРРО
   Future<CashalotResponse> closeShift({required int prroFiscalNum});
+
+  /// Отримання X-звіту (поточний стан)
+
+  Future<CashalotResponse> printXReport({required int prroFiscalNum});
+  Future<CashalotResponse> cleanupCashalot({required int prroFiscalNum});
 }

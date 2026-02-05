@@ -3,147 +3,141 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:enough_convert/enough_convert.dart';
+import 'package:get_it/get_it.dart';
+import '../../core/services/storage_service.dart'; // Переконайтеся, що шлях правильний
+import '../../core/config/vchasno_config.dart'; // Для дефолтних значень, якщо є
 
-/// Сервіс для друку готового тексту від Вчасно на мережевий принтер
 class RawPrinterService {
-  /// Друкує готовий текст від Вчасно на мережевий принтер
+  final StorageService _storageService;
+
+  // Конструктор: бере StorageService з GetIt автоматично,
+  // але дозволяє передати вручну для тестів.
+  RawPrinterService({StorageService? storageService})
+    : _storageService = storageService ?? GetIt.instance<StorageService>();
+
+  // --- ПРИВАТНІ МЕТОДИ ОТРИМАННЯ НАЛАШТУВАНЬ ---
+
+  /// Отримує збережений IP або null
+  Future<String?> _getSavedIp() async {
+    return await _storageService.getString('printer_ip');
+  }
+
+  /// Отримує збережений порт або дефолтний 9100
+  Future<int> _getSavedPort() async {
+    final savedPort = await _storageService.getInt('printer_port');
+    return savedPort ?? 9100; // 9100 - стандарт для RAW друку
+  }
+
+  // --- ПУБЛІЧНІ МЕТОДИ ДРУКУ ---
+
+  /// Друкує візуалізацію (X-звіт, Z-звіт, Чек) з поля visualization
   ///
-  /// [printerIp] - IP-адреса принтера
-  /// [pfTextBase64] - Base64-рядок тексту чека (pf_text з відповіді Вчасно)
-  /// [port] - Порт принтера (за замовчуванням 9100 для RAW printing)
-  Future<void> printVchasnoText({
-    required String printerIp,
-    required String pfTextBase64,
-    int port = 9100,
+  /// Якщо [printerIp] або [port] не передані, бере їх з SharedPreferences.
+  Future<void> printVisualization({
+    required String? visualizationBase64,
+    String? printerIp,
+    int? port,
   }) async {
+    if (visualizationBase64 == null || visualizationBase64.isEmpty) {
+      debugPrint("⚠️ [PRINTER] Немає даних для друку");
+      return;
+    }
+
+    // 1. Визначаємо адресу та порт (Аргумент -> Storage -> Помилка)
+    final targetIp = printerIp ?? await _getSavedIp();
+    final targetPort = port ?? await _getSavedPort();
+
+    if (targetIp == null || targetIp.isEmpty) {
+      debugPrint("⚠️ [PRINTER] IP принтера не налаштовано!");
+      throw Exception("Принтер не налаштовано. Перейдіть в налаштування.");
+    }
+
     try {
-      debugPrint("🖨️ [PRINTER] Підключення до принтера $printerIp:$port");
+      debugPrint(
+        "🖨️ [PRINTER] Друкуємо візуалізацію на $targetIp:$targetPort",
+      );
 
       final socket = await Socket.connect(
-        printerIp,
-        port,
+        targetIp,
+        targetPort,
         timeout: const Duration(seconds: 5),
       );
 
       List<int> bytesToSend = [];
 
-      // ---------------------------------------------------------
-      // 1. КОМАНДИ НАЛАШТУВАННЯ (HEADER)
-      // ---------------------------------------------------------
+      // Ініціалізація + Code Page 17 (PC866/Win1251)
+      bytesToSend.addAll([0x1B, 0x40, 0x1B, 0x74, 17]);
 
-      // Ініціалізація (ESC @)
-      bytesToSend.addAll([0x1B, 0x40]);
+      // Декодування Base64 -> UTF-8 -> Windows-1251
+      String cleanBase64 = visualizationBase64.replaceAll(RegExp(r'\s+'), '');
+      List<int> utf8Bytes = base64.decode(cleanBase64);
+      String decodedText = utf8.decode(utf8Bytes);
 
-      // Встановлення кодової сторінки (Code Page)
-      // ВАЖЛИВО: Для більшості китайських принтерів (Xprinter)
-      // 17 - це зазвичай PC866 (Кирилиця) або Windows-1251.
-      // Якщо будуть ієрогліфи - спробуй змінити 17 на: 6, 16, 34, 73.
-      bytesToSend.addAll([0x1B, 0x74, 17]);
+      final codec = const Windows1251Codec(allowInvalid: true);
+      bytesToSend.addAll(codec.encode(decodedText));
 
-      // ---------------------------------------------------------
-      // 2. ТІЛО ЧЕКА (BODY)
-      // ---------------------------------------------------------
-
-      // Очищаємо Base64 від заголовка "data:text/plain..."
-      String cleanBase64 = pfTextBase64;
-      if (pfTextBase64.contains(',')) {
-        cleanBase64 = pfTextBase64.split(',').last;
-      }
-
-      // Декодуємо Base64 у байти.
-      // Ми НЕ перетворюємо їх у String (utf8), щоб не зламати кодування!
-      List<int> receiptBytes = base64Decode(cleanBase64);
-
-      bytesToSend.addAll(receiptBytes);
-
-      // ---------------------------------------------------------
-      // 3. ЗАВЕРШЕННЯ (FOOTER)
-      // ---------------------------------------------------------
-
-      // Прокрутка (Feed 4 lines)
-      bytesToSend.addAll([0x1B, 0x64, 0x04]);
-
-      // Обрізка (Cut)
-      bytesToSend.addAll([0x1D, 0x56, 0x42, 0x00]);
-
-      // ---------------------------------------------------------
-      // 4. ВІДПРАВКА
-      // ---------------------------------------------------------
+      // Footer: Feed & Cut
+      bytesToSend.addAll([0x1B, 0x64, 0x04, 0x1D, 0x56, 0x42, 0x00]);
 
       socket.add(Uint8List.fromList(bytesToSend));
       await socket.flush();
       await socket.close();
 
-      debugPrint("✅ [PRINTER] Готовий чек від Вчасно відправлено на принтер!");
+      debugPrint("✅ [PRINTER] Друк успішний!");
     } catch (e) {
-      debugPrint("❌ [PRINTER] Помилка друку raw-тексту: $e");
+      debugPrint("❌ [PRINTER] Помилка: $e");
       rethrow;
     }
   }
 
-  /// Друкує банківський сліп (термінальний чек) на мережевий принтер
+  /// Друкує банківський сліп
   ///
-  /// [printerIp] - IP-адреса принтера
-  /// [slipText] - Текст банківського сліпа (з поля receipt або sliptxt)
-  /// [port] - Порт принтера (за замовчуванням 9100 для RAW printing)
+  /// Якщо [printerIp] або [port] не передані, бере їх з SharedPreferences.
   Future<void> printBankSlip({
-    required String printerIp,
     required String slipText,
-    int port = 9100,
+    String? printerIp,
+    int? port,
   }) async {
+    // 1. Визначаємо адресу
+    final targetIp = printerIp ?? await _getSavedIp();
+    final targetPort = port ?? await _getSavedPort();
+
+    if (targetIp == null || targetIp.isEmpty) {
+      debugPrint("⚠️ [PRINTER] IP принтера не налаштовано!");
+      // Для сліпа можна не кидати критичну помилку, а просто логувати
+      return;
+    }
+
     try {
-      debugPrint("🖨️ [PRINTER] Друкуємо банківський сліп на $printerIp:$port");
+      debugPrint("🖨️ [PRINTER] Друкуємо сліп на $targetIp:$targetPort");
 
       final socket = await Socket.connect(
-        printerIp,
-        port,
+        targetIp,
+        targetPort,
         timeout: const Duration(seconds: 5),
       );
 
       List<int> bytesToSend = [];
+      bytesToSend.addAll([0x1B, 0x40, 0x1B, 0x74, 17]); // Init + CP17
 
-      // ---------------------------------------------------------
-      // 1. КОМАНДИ НАЛАШТУВАННЯ (HEADER)
-      // ---------------------------------------------------------
-
-      // Ініціалізація (ESC @)
-      bytesToSend.addAll([0x1B, 0x40]);
-
-      // Встановлення кодової сторінки (Code Page)
-      // 17 - це зазвичай PC866 (Кирилиця) або Windows-1251.
-      // Якщо будуть ієрогліфи - спробуй змінити 17 на: 6, 16, 34, 73.
-      bytesToSend.addAll([0x1B, 0x74, 17]);
-
-      // ---------------------------------------------------------
-      // 2. ТІЛО СЛІПА (BODY)
-      // ---------------------------------------------------------
-
-      // Конвертуємо текст сліпа в байти Windows-1251
-      // Банк дає текст з \n, принтер це розуміє як перенос
       final codec = const Windows1251Codec(allowInvalid: true);
       bytesToSend.addAll(codec.encode(slipText));
 
-      // ---------------------------------------------------------
-      // 3. ЗАВЕРШЕННЯ (FOOTER)
-      // ---------------------------------------------------------
-
-      // Прокрутка (Feed 4 lines)
-      bytesToSend.addAll([0x1B, 0x64, 0x04]);
-
-      // Обрізка (Cut)
-      bytesToSend.addAll([0x1D, 0x56, 0x42, 0x00]);
-
-      // ---------------------------------------------------------
-      // 4. ВІДПРАВКА
-      // ---------------------------------------------------------
+      bytesToSend.addAll([
+        0x1B,
+        0x64,
+        0x04,
+        0x1D,
+        0x56,
+        0x42,
+        0x00,
+      ]); // Feed + Cut
 
       socket.add(Uint8List.fromList(bytesToSend));
       await socket.flush();
       await socket.close();
-
-      debugPrint("✅ [PRINTER] Банківський сліп відправлено на принтер!");
     } catch (e) {
-      debugPrint("❌ [PRINTER] Помилка друку банківського сліпа: $e");
+      debugPrint("❌ [PRINTER] Помилка друку сліпа: $e");
       rethrow;
     }
   }

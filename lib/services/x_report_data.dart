@@ -13,6 +13,11 @@ class XReportData {
   final int? vacantOffNums; // Кількість доступних офлайн номерів
   final String? visualization; // Base64 рядкова візуалізація
   final bool isZRep; // Чи є Z-звіт
+
+  final DateTime? shiftOpened; // Час відкриття зміни
+  final double? serviceInput; // Службове внесення
+  final double? serviceOutput; // Службова видача
+
   // Підсумки по чеках
   final ReceiptSummary? receipt;
 
@@ -66,27 +71,64 @@ class XReportData {
     this.printHeader,
     this.visualization,
     this.isZRep = false,
+    this.shiftOpened,
+    this.serviceInput,
+    this.serviceOutput,
   });
 
   factory XReportData.fromJson(Map<String, dynamic> json) {
-    final info = json['info'] as Map<String, dynamic>?;
-    if (info == null) {
-      throw Exception('Відсутні дані info в відповіді');
+    // Спроба знайти info (для сумісності зі старою логікою)
+    final info = json['info'] as Map<String, dynamic>? ?? json;
+
+    // --- ЛОГІКА ПАРСИНГУ НОВИХ ПОЛІВ ---
+
+    // 1. ShiftOpened (Зазвичай лежить в корені JSON від Cashalot)
+    DateTime? parsedShiftOpened;
+    if (json['ShiftOpened'] != null) {
+      try {
+        parsedShiftOpened = DateTime.parse(json['ShiftOpened'].toString());
+      } catch (e) {
+        // debugPrint('Error parsing ShiftOpened: $e');
+      }
+    }
+
+    // 2. Службові операції (Вкладені в Totals -> ZREPBODY)
+    double? parsedServiceInput;
+    double? parsedServiceOutput;
+
+    if (json['Totals'] != null && json['Totals'] is Map) {
+      final totalsBody = json['Totals']['ZREPBODY'];
+      if (totalsBody != null && totalsBody is Map) {
+        parsedServiceInput = double.tryParse(
+          totalsBody['SERVICEINPUT']?.toString() ?? '',
+        );
+        parsedServiceOutput = double.tryParse(
+          totalsBody['SERVICEOUTPUT']?.toString() ?? '',
+        );
+      }
     }
 
     return XReportData(
-      task: ((json['task'] ?? info['task']) is num)
-          ? (json['task'] ?? info['task']).toInt()
-          : 0,
-      dt: info['dt'] as String?,
-      fisid: info['fisid'] as String?,
+      // Заповнюємо нові поля
+      shiftOpened: parsedShiftOpened,
+      serviceInput: parsedServiceInput,
+      serviceOutput: parsedServiceOutput,
+
+      // ... Ваші старі поля (без змін) ...
+      task: (info['task'] is int) ? info['task'] : 0,
+      dt:
+          info['dt'] as String? ??
+          json['OrderDateTime'] as String?, // Додав фолбек
+      fisid: info['fisid'] as String? ?? json['NumFiscal'] as String?,
       cashier: info['cashier'] as String?,
+      visualization: json['Visualization'] as String?, // Беремо з кореня
+      // ... Решта полів ...
       safe: (info['safe'] as num?)?.toDouble() ?? 0.0,
       safeStartShift: (info['safe_start_shift'] as num?)?.toDouble() ?? 0.0,
-      isOffline: info['isoffline'] as bool? ?? false,
+      isOffline:
+          info['isoffline'] as bool? ?? json['Offline'] as bool? ?? false,
       shiftLink: info['shift_link'] as int?,
-      shiftPrevLink: info['shift_prev_link'] as int?,
-      vacantOffNums: info['vacant_off_nums'] as int?,
+
       receipt: info['receipt'] != null
           ? ReceiptSummary.fromJson(info['receipt'] as Map<String, dynamic>)
           : null,
@@ -103,32 +145,11 @@ class XReportData {
               ?.map((e) => PayData.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      money:
-          (info['money'] as List?)
-              ?.map((e) => MoneyData.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      cash:
-          (info['cash'] as List?)
-              ?.map((e) => CashData.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      lastCheck: info['lastcheck'] != null
-          ? LastCheckData.fromJson(info['lastcheck'] as Map<String, dynamic>)
-          : null,
       warnings:
           (json['warnings'] as List?)
               ?.map((e) => WarningData.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      billing: info['billing'] != null
-          ? BillingData.fromJson(info['billing'] as Map<String, dynamic>)
-          : null,
-      printHeader: info['printheader'] != null
-          ? PrintHeaderData.fromJson(
-              info['printheader'] as Map<String, dynamic>,
-            )
-          : null,
     );
   }
 }

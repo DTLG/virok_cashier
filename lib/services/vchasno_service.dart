@@ -36,6 +36,11 @@ class VchasnoService implements PrroService {
     return [];
   }
 
+  @override
+  Future<XReportData> cleanupCashalot({int? prroFiscalNum}) async {
+    return XReportData(visualization: 'Очищення ПРРО успішно виконано!');
+  }
+
   /// Внутрішній метод з retry логікою
   Future<FiscalResult> _printSaleWithRetry(
     CheckPayload check, {
@@ -165,9 +170,9 @@ class VchasnoService implements PrroService {
                     VchasnoConfig.printerPort;
 
                 // Друкуємо готовий текст на мережевий принтер
-                await _rawPrinterService.printVchasnoText(
+                await _rawPrinterService.printVisualization(
                   printerIp: printerIp,
-                  pfTextBase64: pfTextBase64,
+                  visualizationBase64: pfTextBase64,
                   port: printerPort,
                 );
                 debugPrint(
@@ -578,7 +583,7 @@ class VchasnoService implements PrroService {
 
   /// Службове внесення
   @override
-  Future<void> serviceIn(
+  Future<XReportData?> serviceIn(
     double amount, {
     required String cashier,
     int? prroFiscalNum,
@@ -589,7 +594,7 @@ class VchasnoService implements PrroService {
 
   /// Службова видача
   @override
-  Future<void> serviceOut(
+  Future<XReportData?> serviceOut(
     double amount, {
     required String cashier,
     int? prroFiscalNum,

@@ -1,30 +1,87 @@
-import 'dart:convert'; // 1. Для декодування Base64
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../../services/x_report_data.dart';
+import '../../../../services/raw_printer_service.dart';
+import '../../../../core/widgets/notificarion_toast/toast_manager.dart';
+import '../../../../core/widgets/notificarion_toast/toast_type.dart';
 
 /// Діалог для відображення звіту (X або Z)
-class XReportDialog extends StatelessWidget {
+class XReportDialog extends StatefulWidget {
   final XReportData reportData;
   final String title;
-  final String? visualization; // 2. Додаємо поле для Base64 рядка
-  final bool isZRep; // Можна додати прапорець, щоб розрізняти X та Z
+  final String? visualization;
+  final bool isZRep;
+
   const XReportDialog({
     super.key,
     required this.reportData,
     this.title = 'X-Звіт',
     this.isZRep = false,
-    this.visualization, // Приймаємо його в конструкторі
+    this.visualization,
   });
 
-  // 3. Метод для декодування
+  @override
+  State<XReportDialog> createState() => _XReportDialogState();
+}
+
+class _XReportDialogState extends State<XReportDialog> {
+  // Змінна для відстеження стану друку
+  bool _isPrinting = false;
+
+  // Метод для декодування
   String _decodeVisualization(String base64Str) {
     try {
-      // Очищаємо від можливих пробілів/переносів, якщо вони є
       final cleanStr = base64Str.replaceAll(RegExp(r'\s+'), '');
       final bytes = base64.decode(cleanStr);
       return utf8.decode(bytes);
     } catch (e) {
       return 'Не вдалося декодувати чек: $e';
+    }
+  }
+
+  // Метод друку
+  Future<void> _handlePrint() async {
+    // 1. Вмикаємо лоадер
+    setState(() {
+      _isPrinting = true;
+    });
+
+    final rawPrinterService = RawPrinterService();
+
+    try {
+      // 2. Виконуємо друк (await)
+      await rawPrinterService.printVisualization(
+        visualizationBase64: widget.reportData.visualization!,
+      );
+
+      if (!mounted) return;
+
+      // 3. Успіх
+      ToastManager.show(
+        context,
+        type: ToastType.success,
+        title: 'Друк успішний',
+        message: 'Чек успішно відправлено на принтер',
+      );
+
+      // Закриваємо діалог
+      Navigator.of(context).pop();
+    } catch (e) {
+      debugPrint("Помилка друку: $e");
+      if (!mounted) return;
+
+      // 4. Помилка - вимикаємо лоадер, щоб користувач міг спробувати ще раз
+      setState(() {
+        _isPrinting = false;
+      });
+
+      final errorMessage = e.toString().replaceAll('Exception:', '').trim();
+      ToastManager.show(
+        context,
+        type: ToastType.error,
+        title: 'Помилка друку',
+        message: errorMessage,
+      );
     }
   }
 
@@ -34,9 +91,7 @@ class XReportDialog extends StatelessWidget {
       backgroundColor: const Color(0xFF2A2A2A),
       child: Container(
         width: 600,
-        constraints: const BoxConstraints(
-          maxHeight: 800,
-        ), // Трохи збільшив висоту
+        constraints: const BoxConstraints(maxHeight: 800),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -56,7 +111,7 @@ class XReportDialog extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      title,
+                      widget.title,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -64,10 +119,12 @@ class XReportDialog extends StatelessWidget {
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white70),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
+                  // Ховаємо хрестик, якщо йде друк, щоб не переривати процес
+                  if (!_isPrinting)
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white70),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
                 ],
               ),
             ),
@@ -79,146 +136,45 @@ class XReportDialog extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // === СЕКЦІЯ ВІЗУАЛІЗАЦІЇ (НОВА) ===
-                    if (visualization != null && visualization!.isNotEmpty)
-                      _buildSection('Візуалізація чека', [
+                    // === СЕКЦІЯ ВІЗУАЛІЗАЦІЇ ===
+                    if (widget.reportData.visualization != null &&
+                        widget.reportData.visualization!.isNotEmpty)
+                      _buildSection('Візуалізація звіту', [
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF1E1E1E,
-                            ), // Темніший фон для "паперу"
+                            color: const Color(0xFF1E1E1E),
                             border: Border.all(color: Colors.white12),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: SelectableText(
-                            // Щоб можна було копіювати текст
-                            _decodeVisualization(visualization!),
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontFamily:
-                                  'monospace', // ВАЖЛИВО: для рівних колонок
-                              fontSize: 12,
-                              height: 1.2,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SelectableText(
+                              _decodeVisualization(
+                                widget.reportData.visualization!,
+                              ),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'monospace',
+                                fontSize: 15,
+                                height: 1.2,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ),
                       ]),
-
-                    if (visualization != null) const SizedBox(height: 16),
-
-                    // Загальна інформація
-                    _buildSection('Загальна інформація', [
-                      _buildInfoRow('Дата/Час', reportData.dt ?? 'N/A'),
-                      _buildInfoRow('ПРРО', reportData.fisid ?? 'N/A'),
-                      _buildInfoRow('Касир', reportData.cashier ?? 'N/A'),
-                      _buildInfoRow(
-                        'Режим',
-                        reportData.isOffline ? 'Офлайн' : 'Онлайн',
-                      ),
-                      _buildInfoRow(
-                        'Залишок готівки',
-                        '${reportData.safe.toStringAsFixed(2)} грн',
-                      ),
-                      _buildInfoRow(
-                        'Залишок на початок зміни',
-                        '${reportData.safeStartShift.toStringAsFixed(2)} грн',
-                      ),
-                      if (reportData.shiftLink != null)
-                        _buildInfoRow(
-                          'Поточний номер Z-звіту',
-                          reportData.shiftLink.toString(),
-                        ),
-                    ]),
-
-                    const SizedBox(height: 16),
-
-                    // Підсумки по чеках
-                    if (reportData.receipt != null)
-                      _buildSection('Підсумки по чеках', [
-                        _buildInfoRow(
-                          'Чеків на продаж',
-                          reportData.receipt!.countP.toString(),
-                        ),
-                        _buildInfoRow(
-                          'Чеків повернення',
-                          reportData.receipt!.countM.toString(),
-                        ),
-                        _buildInfoRow(
-                          'Чеків видачі готівки',
-                          reportData.receipt!.count14.toString(),
-                        ),
-                        _buildInfoRow(
-                          'Останній чек продажу',
-                          reportData.receipt!.lastDocnoP.toString(),
-                        ),
-                        _buildInfoRow(
-                          'Останній чек повернення',
-                          reportData.receipt!.lastDocnoM.toString(),
-                        ),
-                      ]),
-
-                    const SizedBox(height: 16),
-
-                    // Загальні підсумки
-                    if (reportData.summary != null)
-                      _buildSection('Загальні підсумки', [
-                        _buildInfoRow(
-                          'Оборот продажу',
-                          '${reportData.summary!.calcP.toStringAsFixed(2)} грн',
-                        ),
-                        _buildInfoRow(
-                          'Оборот повернення',
-                          '${reportData.summary!.calcM.toStringAsFixed(2)} грн',
-                        ),
-                        _buildInfoRow(
-                          'Знижка продажу',
-                          '${reportData.summary!.discP.toStringAsFixed(2)} грн',
-                        ),
-                        _buildInfoRow(
-                          'Знижка повернення',
-                          '${reportData.summary!.discM.toStringAsFixed(2)} грн',
-                        ),
-                      ]),
-
-                    const SizedBox(height: 16),
-
-                    // Оплати
-                    if (reportData.pays.isNotEmpty)
-                      _buildSection(
-                        'Оплати',
-                        reportData.pays.map((pay) {
-                          final total = pay.sumP - pay.sumM;
-                          return _buildInfoRow(
-                            pay.name,
-                            '${total.toStringAsFixed(2)} грн',
-                          );
-                        }).toList(),
-                      ),
-
-                    const SizedBox(height: 16),
-
-                    // Податки
-                    if (reportData.taxes.isNotEmpty)
-                      _buildSection(
-                        'Податки',
-                        reportData.taxes.map((tax) {
-                          final total = tax.taxSumP - tax.taxSumM;
-                          return _buildInfoRow(
-                            '${tax.taxName} (${tax.taxPercent}%)',
-                            '${total.toStringAsFixed(2)} грн',
-                          );
-                        }).toList(),
-                      ),
+                    if (widget.visualization != null)
+                      const SizedBox(height: 16),
 
                     const SizedBox(height: 16),
 
                     // Попередження
-                    if (reportData.warnings.isNotEmpty)
+                    if (widget.reportData.warnings.isNotEmpty)
                       _buildSection(
                         'Попередження',
-                        reportData.warnings.map((warning) {
+                        widget.reportData.warnings.map((warning) {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Row(
@@ -251,7 +207,7 @@ class XReportDialog extends StatelessWidget {
               ),
             ),
 
-            // Кнопка закриття
+            // === КНОПКИ або ЛОАДЕР ===
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -259,20 +215,61 @@ class XReportDialog extends StatelessWidget {
                   top: BorderSide(color: Colors.white.withOpacity(0.1)),
                 ),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: const Text(
-                    'Готово',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
+              child: _isPrinting
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Colors.blue),
+                    )
+                  : Row(
+                      children: [
+                        // Кнопка Друк
+                        Expanded(
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed:
+                                  _handlePrint, // Викликаємо метод обробки
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                              ),
+                              child: const Text(
+                                'Друк',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Кнопка Готово
+                        Expanded(
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors
+                                    .grey[700], // Трохи інший колір для другорядної дії
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                              ),
+                              child: const Text(
+                                'Готово',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -302,31 +299,6 @@ class XReportDialog extends StatelessWidget {
           child: Column(children: children),
         ),
       ],
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

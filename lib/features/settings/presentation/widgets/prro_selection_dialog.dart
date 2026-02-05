@@ -3,7 +3,8 @@ import '../../../../core/models/prro_info.dart';
 // import '../../../../core/services/cashalot_service.dart';
 import '../../../../core/services/storage_service.dart';
 import '../../../../core/widgets/notificarion_toast/view.dart';
-// import 'package:get_it/get_it.dart';
+import '../../../../features/home/presentation/bloc/home_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Діалог для вибору активної каси (ПРРО)
 /// Для Vchasno не потрібно отримувати список ПРРО з API
@@ -38,13 +39,15 @@ class _PrroSelectionDialogState extends State<PrroSelectionDialog> {
 
     try {
       if (_savedPrroNum != null) {
-        _prros = [
-          PrroInfo(numFiscal: _savedPrroNum!, name: 'Каса ${_savedPrroNum!}'),
-        ];
+        _prros = context.read<HomeBloc>().state.prroInfo ?? [];
+        // _prros = [
+        //   PrroInfo(numFiscal: _savedPrroNum!, name: 'Каса ${_savedPrroNum!}'),
+        // ];
         _selectedPrro = _prros.first;
       } else {
+        _prros = context.read<HomeBloc>().state.prroInfo ?? [];
         // Якщо немає збереженої каси, створюємо дефолтну
-        _prros = [PrroInfo(numFiscal: '4000365576', name: 'Каса 1')];
+        // _prros = [PrroInfo(numFiscal: '4000365576', name: 'Каса 1')];
         _selectedPrro = _prros.first;
       }
 

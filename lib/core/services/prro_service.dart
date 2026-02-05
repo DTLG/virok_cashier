@@ -46,7 +46,7 @@ abstract class PrroService {
   /// [amount] - сума для внесення
   /// [cashier] - ім'я касира
   /// [prroFiscalNum] - фіскальний номер ПРРО (опціонально, для сервісів що потребують)
-  Future<void> serviceIn(
+  Future<XReportData?> serviceIn(
     double amount, {
     required String cashier,
     int? prroFiscalNum,
@@ -57,9 +57,14 @@ abstract class PrroService {
   /// [amount] - сума для видачі
   /// [cashier] - ім'я касира
   /// [prroFiscalNum] - фіскальний номер ПРРО (опціонально, для сервісів що потребують)
-  Future<void> serviceOut(
+  Future<XReportData?> serviceOut(
     double amount, {
     required String cashier,
     int? prroFiscalNum,
   });
+
+  /// Очищення ПРРО (синхронізація)
+  ///
+  /// [prroFiscalNum] - фіскальний номер ПРРО (опціонально, для сервісів що потребують)
+  Future<XReportData> cleanupCashalot({int? prroFiscalNum});
 }

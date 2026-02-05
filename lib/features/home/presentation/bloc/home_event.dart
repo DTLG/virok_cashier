@@ -118,8 +118,9 @@ final class NavigateToPage extends HomeEvent {
 /// Відкриття зміни через CashalotService
 final class OpenCashalotShift extends HomeEvent {
   final int? prroFiscalNum;
+  final double amount;
 
-  const OpenCashalotShift({this.prroFiscalNum});
+  const OpenCashalotShift({this.prroFiscalNum, required this.amount});
 
   @override
   List<Object> get props => [prroFiscalNum ?? 0];
@@ -168,4 +169,13 @@ final class ServiceIssueEvent extends HomeEvent {
 
   @override
   List<Object> get props => [amount, prroFiscalNum ?? 0];
+}
+
+final class CleanupCashalotEvent extends HomeEvent {
+  final int? prroFiscalNum;
+
+  const CleanupCashalotEvent({this.prroFiscalNum});
+
+  @override
+  List<Object> get props => [prroFiscalNum ?? 0];
 }

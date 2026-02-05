@@ -238,6 +238,11 @@ class MockCashalotService implements CashalotService {
     return response;
   }
 
+  @override
+  Future<CashalotResponse> cleanupCashalot({required int prroFiscalNum}) async {
+    return CashalotResponse(errorCode: 'SUCCESS');
+  }
+
   /// Формує текстовий вигляд чека продажу
   String _buildReceiptVisualization(CheckPayload check, String fiscalNum) {
     final buffer = StringBuffer();
@@ -316,6 +321,11 @@ class MockCashalotService implements CashalotService {
     buffer.writeln("Дата: ${DateTime.now().toString().substring(0, 19)}");
     buffer.writeln("--------------------------------");
     return buffer.toString();
+  }
+
+  @override
+  Future<CashalotResponse> printXReport({required int prroFiscalNum}) async {
+    return CashalotResponse(errorCode: 'SUCCESS');
   }
 
   @override

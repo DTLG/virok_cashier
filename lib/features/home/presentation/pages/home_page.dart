@@ -191,6 +191,12 @@ class _HomePageState extends State<HomePage> {
       case HomeStatus.lastOpenedShiftClosed:
         // Перехідний стан, показуємо loading
         return const HomeLoadingWidget();
+
+      case HomeStatus.cleanupCashalot:
+        return const HomeLoadingWidget();
+
+      case HomeStatus.cleanupSuccess:
+        return _buildLoggedInContent(context, state);
     }
   }
 

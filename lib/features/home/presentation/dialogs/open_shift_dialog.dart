@@ -35,7 +35,7 @@ Future<void> showOpenShiftDialog(BuildContext context) async {
               // Фіскальне відкриття зміни через CashalotService
               if (context.mounted) {
                 final homeBloc = context.read<HomeBloc>();
-                homeBloc.add(const OpenCashalotShift());
+                homeBloc.add(OpenCashalotShift(amount: openingAmount));
               }
 
               if (context.mounted) Navigator.of(ctx).pop();

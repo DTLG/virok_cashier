@@ -23,6 +23,11 @@ import '../di/cashalot_injection.dart';
 import '../di/prro_injection.dart';
 import '../config/cashalot_config.dart';
 import '../../services/vchasno_service.dart';
+import '../../features/home/presentation/bloc/home_bloc.dart';
+import 'prro_service.dart';
+import 'cashalot_prro_adapter.dart';
+import 'cashalot_service.dart';
+import 'real_cashalot_service.dart';
 
 class AppInitializationService {
   static final GetIt _sl = GetIt.instance;
@@ -87,6 +92,25 @@ class AppInitializationService {
           // realtimeService: _sl<RealtimeService>(),
         ),
       );
+      final storageService = _sl<StorageService>();
+      final savedKeyPath = await storageService.getCashalotKeyPath();
+      final savedCertPath = await storageService.getCashalotCertPath();
+      final savedKeyPassword = await storageService.getCashalotKeyPassword();
+      final keyPath = savedKeyPath ?? CashalotConfig.keyPath;
+      final certPath = savedCertPath ?? CashalotConfig.certPath;
+      final keyPassword = savedKeyPassword ?? CashalotConfig.keyPassword;
+      _sl.registerLazySingleton<CashalotService>(
+        () => RealCashalotService(
+          baseUrl: CashalotConfig.baseUrl,
+          keyPath: keyPath,
+          defaultPrroFiscalNum: CashalotConfig.defaultPrroFiscalNum,
+          certPath: certPath ?? CashalotConfig.certPath,
+          keyPassword: keyPassword ?? CashalotConfig.keyPassword,
+        ),
+      );
+      _sl.registerLazySingleton(
+        () => CashalotPrroAdapter(_sl<CashalotService>()),
+      );
 
       // Реєстрація SettingsBloc
       _sl.registerLazySingleton<SettingsBloc>(
@@ -95,7 +119,14 @@ class AppInitializationService {
           dataSyncService: _sl<DataSyncService>(),
         ),
       );
-
+      // HomeBloc (Реєструємо фабрику, щоб GetIt сам підставив сервіси)
+      // HomeBloc (Реєструємо фабрику, щоб GetIt сам підставив сервіси)
+      _sl.registerFactory(
+        () => HomeBloc(
+          storageService: _sl<StorageService>(),
+          prroService: _sl<PrroService>(),
+        ),
+      );
       // Реєстрація Sync залежностей
       setupSyncInjection();
 
@@ -109,23 +140,23 @@ class AppInitializationService {
       // 2. Змінити PrroServiceType.cashalot в setupPrroInjection
 
       // Реєстрація Cashalot залежностей (якщо потрібно)
-      final storageService = _sl<StorageService>();
-      final savedKeyPath = await storageService.getCashalotKeyPath();
-      final savedCertPath = await storageService.getCashalotCertPath();
-      final savedKeyPassword = await storageService.getCashalotKeyPassword();
-      final keyPath = savedKeyPath ?? CashalotConfig.keyPath;
-      final certPath = savedCertPath ?? CashalotConfig.certPath;
-      final keyPassword = savedKeyPassword ?? CashalotConfig.keyPassword;
+      // final storageService = _sl<StorageService>();
+      // final savedKeyPath = await storageService.getCashalotKeyPath();
+      // final savedCertPath = await storageService.getCashalotCertPath();
+      // final savedKeyPassword = await storageService.getCashalotKeyPassword();
+      // final keyPath = savedKeyPath ?? CashalotConfig.keyPath;
+      // final certPath = savedCertPath ?? CashalotConfig.certPath;
+      // final keyPassword = savedKeyPassword ?? CashalotConfig.keyPassword;
 
       // Реєструємо CashalotService (якщо потрібно для майбутнього використання)
-      setupCashalotInjection(
-        useReal: CashalotConfig.useReal,
-        baseUrl: CashalotConfig.baseUrl,
-        keyPath: keyPath,
-        certPath: certPath,
-        keyPassword: keyPassword,
-        defaultPrroFiscalNum: CashalotConfig.defaultPrroFiscalNum,
-      );
+      // setupCashalotInjection(
+      //   useReal: CashalotConfig.useReal,
+      //   baseUrl: CashalotConfig.baseUrl,
+      //   keyPath: keyPath,
+      //   certPath: certPath,
+      //   keyPassword: keyPassword,
+      //   defaultPrroFiscalNum: CashalotConfig.defaultPrroFiscalNum,
+      // );
 
       // Реєстрація PrroService (універсальний інтерфейс для ПРРО)
       // За замовчуванням використовується VchasnoService
