@@ -25,7 +25,7 @@ abstract class PrroService {
   /// [prroFiscalNum] - фіскальний номер ПРРО (опціонально, для сервісів що потребують)
   ///
   /// Повертає true якщо зміна успішно відкрита
-  Future<bool> openShift({int? prroFiscalNum});
+  Future<CashalotResponse> openShift({int? prroFiscalNum});
 
   /// Закриття зміни (Z-звіт)
   ///

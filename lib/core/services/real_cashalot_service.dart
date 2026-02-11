@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import '../models/cashalot_models.dart';
 import '../models/prro_info.dart';
+import '../models/pos_result.dart';
 import 'cashalot_service.dart';
 import 'cashalot_api_client.dart';
 
@@ -517,6 +518,7 @@ class RealCashalotService implements CashalotService {
   Future<CashalotResponse> registerSale({
     required int prroFiscalNum,
     required CheckPayload check,
+    PosTransactionResult? cardData,
   }) async {
     try {
       debugPrint('📡 [CASHALOT] Запит: registerSale()');

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import '../models/cashalot_models.dart';
 import '../models/prro_info.dart';
+import '../models/pos_result.dart';
 import 'cashalot_service.dart';
 
 /// Mock реалізація CashalotService
@@ -99,6 +100,7 @@ class MockCashalotService implements CashalotService {
   Future<CashalotResponse> registerSale({
     required int prroFiscalNum,
     required CheckPayload check,
+    PosTransactionResult? cardData,
   }) async {
     debugPrint('📡 [CASHALOT] Запит: registerSale()');
     debugPrint('   Параметри:');

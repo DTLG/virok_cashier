@@ -19,15 +19,12 @@ import '../widgets/sync_dialog.dart';
 import '../../features/settings/presentation/bloc/settings_bloc.dart';
 import '../di/sync_injection.dart';
 import '../di/home_injection.dart';
-import '../di/cashalot_injection.dart';
 import '../di/prro_injection.dart';
 import '../config/cashalot_config.dart';
-import '../../services/vchasno_service.dart';
 import '../../features/home/presentation/bloc/home_bloc.dart';
 import 'prro_service.dart';
-import 'cashalot_prro_adapter.dart';
-import 'cashalot_service.dart';
-import 'real_cashalot_service.dart';
+import 'cashalot_com_service.dart';
+import 'dart:io';
 
 class AppInitializationService {
   static final GetIt _sl = GetIt.instance;
@@ -92,25 +89,9 @@ class AppInitializationService {
           // realtimeService: _sl<RealtimeService>(),
         ),
       );
-      final storageService = _sl<StorageService>();
-      final savedKeyPath = await storageService.getCashalotKeyPath();
-      final savedCertPath = await storageService.getCashalotCertPath();
-      final savedKeyPassword = await storageService.getCashalotKeyPassword();
-      final keyPath = savedKeyPath ?? CashalotConfig.keyPath;
-      final certPath = savedCertPath ?? CashalotConfig.certPath;
-      final keyPassword = savedKeyPassword ?? CashalotConfig.keyPassword;
-      _sl.registerLazySingleton<CashalotService>(
-        () => RealCashalotService(
-          baseUrl: CashalotConfig.baseUrl,
-          keyPath: keyPath,
-          defaultPrroFiscalNum: CashalotConfig.defaultPrroFiscalNum,
-          certPath: certPath ?? CashalotConfig.certPath,
-          keyPassword: keyPassword ?? CashalotConfig.keyPassword,
-        ),
-      );
-      _sl.registerLazySingleton(
-        () => CashalotPrroAdapter(_sl<CashalotService>()),
-      );
+
+      // COM‑реалізація Cashalot (Windows, через MethodChannel)
+      _sl.registerLazySingleton<CashalotComService>(() => CashalotComService());
 
       // Реєстрація SettingsBloc
       _sl.registerLazySingleton<SettingsBloc>(
@@ -159,16 +140,10 @@ class AppInitializationService {
       // );
 
       // Реєстрація PrroService (універсальний інтерфейс для ПРРО)
-      // За замовчуванням використовується VchasnoService
-      // Для перемикання на Cashalot змініть PrroServiceType.cashalot
-      final defaultPrroFiscalNum = CashalotConfig.defaultPrroFiscalNum != null
-          ? int.tryParse(CashalotConfig.defaultPrroFiscalNum!)
-          : null;
-
+      // ТУТ обираємо реалізацію через Cashalot COM
       setupPrroInjection(
-        serviceType: PrroServiceType
-            .cashalot, // Змініть на .cashalot для використання Cashalot
-        defaultPrroFiscalNum: defaultPrroFiscalNum,
+        serviceType: PrroServiceType.cashalotCom,
+        defaultPrroFiscalNum: int.tryParse(CashalotConfig.defaultPrroFiscalNum),
       );
 
       _isInitialized = true;
@@ -258,6 +233,45 @@ class AppInitializationService {
 
   /// Отримує зареєстровану залежність
   static T get<T extends Object>() => _sl<T>();
+
+  /// Ініціалізація Cashalot COM‑addin (Windows) через MethodChannel.
+  ///
+  /// Викличте, наприклад, у `main.dart` після `initializeDependencies()`:
+  /// `await AppInitializationService.initCashalot();`
+  static Future<void> initCashalot() async {
+    final comService = _sl<CashalotComService>();
+
+    // Фіскальний номер з конфігурації
+    const fiscalNumber = CashalotConfig.defaultPrroFiscalNum;
+
+    const cashalotPath = r'D:\Cashalot';
+    final storageService = _sl<StorageService>();
+    final keyPathFromFile = await storageService
+        .getCashalotKeyPath(); // Тут повний шлях до файлу
+    final password = await storageService.getCashalotKeyPassword();
+
+    // !!! ВИПРАВЛЕННЯ !!!
+    // Якщо шлях вказує на файл, беремо його батьківську папку
+    String directoryPath = keyPathFromFile ?? '';
+
+    if (directoryPath.isNotEmpty) {
+      final file = File(directoryPath);
+      // Перевіряємо, чи це файл, чи вже папка
+      if (await file.exists()) {
+        // Це файл?
+        directoryPath = file.parent.path; // Беремо папку: D:\test_cashalot_keys
+      }
+    }
+
+    debugPrint('🔑 Шлях до ключів (DIR): $directoryPath');
+
+    await comService.initialize(
+      cashalotPath: cashalotPath,
+      keyPath: directoryPath, // Передаємо папку!
+      password: password ?? '',
+      fiscalNumber: fiscalNumber,
+    );
+  }
 }
 
 /// Результат ініціалізації програми

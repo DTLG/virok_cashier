@@ -57,6 +57,11 @@ void main() async {
   // Ініціалізуємо залежності
   try {
     await AppInitializationService.initializeDependencies();
+
+    // ініціалізація COM‑Cashalot
+    await AppInitializationService.initCashalot();
+
+    runApp(const MainApp());
   } catch (e) {
     print('Dependencies initialization error: $e');
   }

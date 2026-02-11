@@ -15,6 +15,8 @@ class CashalotResponse {
   final double? serviceInput; // Службове внесення
   final double? serviceOutput; // Службова видача (за компанію додамо і це)
 
+  final Map<String, dynamic>? data;
+
   CashalotResponse({
     this.errorCode,
     this.errorMessage,
@@ -25,6 +27,7 @@ class CashalotResponse {
     this.shiftOpened,
     this.serviceInput,
     this.serviceOutput,
+    this.data,
   });
 
   bool get isSuccess => errorCode == null || errorCode == 'Ok';

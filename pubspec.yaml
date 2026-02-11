@@ -30,6 +30,7 @@ dependencies:
   qr_flutter: ^4.1.0
   open_filex: ^4.3.2
   enough_convert: ^1.6.0
+  xml: ^6.6.1
 
 dev_dependencies:
   flutter_test:

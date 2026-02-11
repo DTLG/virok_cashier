@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import '../../../../core/services/storage_service.dart';
 import '../../../../core/services/prro_service.dart';
@@ -10,13 +9,14 @@ import '../../../../services/vchasno_errors.dart';
 import '../../../../services/fiscal_result.dart';
 import '../../../../services/x_report_data.dart';
 import '../../../../services/terminal_payment_service.dart';
-import '../../../../services/raw_printer_service.dart';
-import '../../../../core/config/vchasno_config.dart';
 import '../../data/datasources/shift_remote_data_source.dart';
 import '../../data/datasources/check_remote_data_source.dart';
 import '../../../login/domain/entities/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/models/prro_info.dart';
+import '../../../../core/models/pos_result.dart';
+import '../../../../core/models/pos_terminal.dart';
+import '../../../../core/services/cashalot_com_service.dart';
 
 part 'home_event.dart';
 part 'home_state.dart';
@@ -26,7 +26,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
   final PrroService prroService;
   final TerminalPaymentService terminalPaymentService =
       TerminalPaymentService();
-  final RawPrinterService _rawPrinterService = RawPrinterService();
   final ShiftRemoteDataSource shiftRemoteDataSource = ShiftRemoteDataSource(
     Supabase.instance.client,
   );
@@ -77,21 +76,18 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
   /// Для Vchasno не потрібно отримувати список ПРРО, повертаємо дефолтне значення
   Future<int> _getActivePrroFiscalNum() async {
     // Перевіряємо збережену касу
-    final savedPrroNum = await storageService.getCashalotSelectedPrro();
-    if (savedPrroNum != null) {
-      try {
-        final prroNum = int.parse(savedPrroNum);
-        debugPrint('📋 [PRRO] Використовується збережена каса: $prroNum');
-        return prroNum;
-      } catch (e) {
-        debugPrint('⚠️ [PRRO] Помилка парсингу збереженої каси: $e');
-      }
-    }
+    // final savedPrroNum = await storageService.getCashalotSelectedPrro();
 
-    // Для Vchasno не потрібно отримувати список ПРРО
-    // Повертаємо дефолтне значення (не використовується в Vchasno API)
-    debugPrint('📋 [PRRO] Використовується дефолтна каса для Vchasno');
-    return 1; // Дефолтне значення, не використовується в Vchasno
+    final savedPrroNum = '4000944684';
+    try {
+      final prroNum = int.parse(savedPrroNum);
+      debugPrint('📋 [PRRO] Використовується збережена каса: $prroNum');
+      return prroNum;
+    } catch (e) {
+      debugPrint('⚠️ [PRRO] Помилка парсингу збереженої каси: $e');
+      // Фолбек, якщо щось пішло не так
+      return 1;
+    }
   }
 
   Future<void> _onCheckUserLoginStatus(
@@ -550,48 +546,19 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
       );
 
       // 4. Етап Оплати (Банківський термінал)
-      // Якщо оплата карткою - спочатку знімаємо гроші
-      // if (state.paymentForm.toUpperCase().contains('КАРТ')) {
-      //   debugPrint('💳 [CHECKOUT] Старт оплати карткою...');
-
-      //   // 4.1. Pre-Auth
-      //   final preAuth = await terminalPaymentService.requestCardPreAuth(
-      //     amount: totalSum,
-      //   );
-      //   if (!preAuth.success) {
-      //     emit(
-      //       state.copyWith(
-      //         status: HomeStatus.error,
-      //         errorMessage:
-      //             preAuth.message ?? 'Помилка з\'єднання з терміналом',
-      //       ),
-      //     );
-      //     return;
-      //   }
-
-      //   // 4.2. Finish Payment
-      //   final payment = await terminalPaymentService.finishCardPayment(
-      //     approve: true,
-      //     overrideAmount: totalSum,
-      //   );
-
-      //   if (!payment.success) {
-      //     emit(
-      //       state.copyWith(
-      //         status: HomeStatus.error,
-      //         errorMessage: payment.message ?? 'Оплата карткою не пройшла',
-      //       ),
-      //     );
-      //     return;
-      //   }
-
-      //   debugPrint('✅ [CHECKOUT] Оплата карткою успішна');
-
-      //   // 4.3. Друк сліпів (не блокує фіскалізацію при помилці)
-      //   if (payment.bankReceiptText != null) {
-      //     _printBankSlips(payment.bankReceiptText!);
-      //   }
-      // }
+      // Якщо оплата карткою - спочатку знімаємо гроші через POS, прив'язаний у Cashalot
+      PosTransactionResult? cardResult;
+      if (state.paymentForm.toUpperCase().contains('КАРТ')) {
+        cardResult = await _processCardPayment(
+          amount: totalSum,
+          prroFiscalNum: prroFiscalNum,
+          emit: emit,
+        );
+        // Якщо оплата неуспішна або користувачеві вже показано помилку – перериваємося
+        if (cardResult == null || !cardResult.isSuccess) {
+          return;
+        }
+      }
 
       // 5. Етап Фіскалізації (Cashalot)
       debugPrint('🚀 [CHECKOUT] Підготовка даних для ПРРО...');
@@ -626,11 +593,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
         ],
       );
 
-      // Викликаємо сервіс
+      // Викликаємо сервіс фіскалізації (через PrroService / Cashalot)
+      // cardResult зараз не проходить через PrroService, але збережений для подальшого використання.
       final fiscalResult = await prroService.printSale(payload);
 
       if (!fiscalResult.success) {
-        throw Exception(fiscalResult.message ?? 'Помилка фіскалізації');
+        throw Exception('Помилка фіскалізації');
       }
 
       debugPrint(
@@ -666,33 +634,104 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     }
   }
 
-  // Допоміжний метод для друку сліпів
-  Future<void> _printBankSlips(String slipText) async {
+  /// Оплата карткою через POS, налаштований в Cashalot (COM).
+  ///
+  /// 1. Отримує список POS-терміналів для вказаного ПРРО з Cashalot.
+  /// 2. Обирає термінал за замовчуванням (або перший у списку).
+  /// 3. Виконує оплату (поки що MOCK, тут має бути реальний виклик до банківського драйвера).
+  /// 4. Повертає результат оплати або null, якщо вже емічено помилку.
+  Future<PosTransactionResult?> _processCardPayment({
+    required double amount,
+    required int prroFiscalNum,
+    required Emitter<HomeViewState> emit,
+  }) async {
     try {
-      final ip =
-          await storageService.getString('printer_ip') ??
-          VchasnoConfig.printerIp;
-      final port =
-          await storageService.getInt('printer_port') ??
-          VchasnoConfig.printerPort;
+      final cashalotCom = GetIt.instance<CashalotComService>();
 
-      // Клієнтський чек
-      await _rawPrinterService.printBankSlip(
-        printerIp: ip,
-        port: port,
-        slipText: slipText,
+      // 1. (Опціонально) Перевіряємо, чи є взагалі налаштовані термінали
+      // Це корисно, щоб не чекати таймауту від драйвера, якщо терміналів немає.
+      // final List<PosTerminal> terminals = await cashalotCom.getPosTerminals(
+      //   prroFiscalNum.toString(),
+      // );
+
+      // if (terminals.isEmpty) {
+      //   emit(
+      //     state.copyWith(
+      //       status: HomeStatus.error,
+      //       errorMessage: 'Не знайдено налаштованих POS-терміналів у Cashalot',
+      //     ),
+      //   );
+      //   return null;
+      // }
+
+      // Знаходимо дефолтний просто для логування (красиво показати в консолі)
+      // final defaultTerminal = terminals.firstWhere(
+      //   (t) => t.isDefault,
+      //   orElse: () => terminals.first,
+      // );
+
+      // debugPrint('💳 Старт оплати на терміналі: ${defaultTerminal.name}...');
+      debugPrint('💰 Сума до сплати: $amount');
+
+      // 2. ВІДПРАВЛЯЄМО ЗАПИТ НА ТЕРМІНАЛ (РЕАЛЬНИЙ ВИКЛИК)
+      // Цей метод "заморозить" виконання, поки клієнт не прикладе картку до термінала
+      final response = await cashalotCom.payByCard(
+        fiscalNum: prroFiscalNum.toString(),
+        amount: amount,
       );
-      await Future.delayed(const Duration(seconds: 2));
-      // Мерчант чек
-      await _rawPrinterService.printBankSlip(
-        printerIp: ip,
-        port: port,
-        slipText: slipText,
+
+      // 3. Обробляємо результат
+      if (response.errorCode != null || response.data == null) {
+        throw Exception(
+          response.errorMessage ?? 'Невідома помилка POS-термінала',
+        );
+      }
+
+      // Отримуємо JSON з даними транзакції
+      final data = response.data!;
+      debugPrint('✅ [POS] Оплата успішна! Дані: $data');
+
+      /* Приклад JSON від Cashalot (згідно документації):
+         {
+            "RRN": "123...",
+            "ApprovalCode": "654321",
+            "InvoiceNumber": "123",
+            "TerminalID": "...",
+            "PAN": "...",
+            "IssuerName": "VISA",
+            "AcquireName": "...",
+            "TransactionDate": "..."
+         }
+      */
+
+      // 4. Мапимо відповідь у вашу модель PosTransactionResult
+      final result = PosTransactionResult(
+        isSuccess: true,
+        rrn: data['RRN']?.toString(),
+        authCode: data['ApprovalCode']?.toString(),
+        terminalId: data['TerminalID']?.toString(),
+        cardPan: data['PAN']?.toString(),
+        paymentSystem: data['IssuerName']?.toString(),
+        acquireName: data['AcquireName']
+            ?.toString(), // Назва терміналу або банку
+        transactionDate: data['TransactionDate']?.toString(),
       );
+
+      return result;
     } catch (e) {
-      debugPrint('⚠️ Помилка друку сліпа: $e');
+      debugPrint('❌ [POS] Помилка оплати карткою: $e');
+      emit(
+        state.copyWith(
+          status: HomeStatus.error,
+          errorMessage:
+              'Оплата не пройшла: ${e.toString().replaceAll('Exception:', '').trim()}',
+        ),
+      );
+      return null;
     }
   }
+  // _printBankSlips наразі не використовується в COM‑сценарії та видалений,
+  // щоб уникнути попереджень лінтера.
 
   // Допоміжний метод для збереження в БД
   Future<void> _saveCheckToDatabase({
@@ -805,21 +844,29 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
   ) async {
     try {
       emit(state.copyWith(status: HomeStatus.loading));
-      // debugPrint('🔓 [OPEN_SHIFT] Вчасно не потребує відкриття зміни окремо');
-      await prroService.openShift();
+
+      // 1. Відкриваємо зміну (незалежно від суми)
+      final response = await prroService.openShift();
+      if (response.errorMessage != null && response.errorMessage!.isNotEmpty) {
+        throw Exception(response.errorMessage);
+      }
+      // 2. Якщо треба, робимо внесення
       if (event.amount > 0) {
         await prroService.serviceIn(
           event.amount,
           cashier: state.user?.name ?? '',
         );
-        debugPrint('✅ [OPEN_SHIFT] Готово до роботи');
-        emit(
-          state.copyWith(
-            status: HomeStatus.loggedIn,
-            openedShiftAt: DateTime.now(),
-          ),
-        );
       }
+
+      // 3. !!! ВИПРАВЛЕННЯ !!!
+      // Повідомляємо UI, що все готово, НАВІТЬ ЯКЩО внесення не було
+      debugPrint('✅ [OPEN_SHIFT] Готово до роботи');
+      emit(
+        state.copyWith(
+          status: HomeStatus.loggedIn,
+          openedShiftAt: DateTime.now(),
+        ),
+      );
     } catch (e) {
       debugPrint('❌ [OPEN_SHIFT] Помилка: $e');
       emit(
@@ -853,9 +900,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
       emit(state.copyWith(status: HomeStatus.loading));
       debugPrint('🔒 [CLOSE_SHIFT] Початок закриття зміни (Z-звіт)...');
 
-      debugPrint(
-        '🚀 [CLOSE_SHIFT] Відправка запиту printZReport до VchasnoService...',
-      );
       final reportData = await prroService.closeShift();
 
       if (reportData != null) {

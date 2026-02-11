@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:xml/xml.dart' as xml; // Імпорт пакету XML
+import 'package:enough_convert/enough_convert.dart';
 import '../../../../services/x_report_data.dart';
 import '../../../../services/raw_printer_service.dart';
 import '../../../../core/widgets/notificarion_toast/toast_manager.dart';
 import '../../../../core/widgets/notificarion_toast/toast_type.dart';
 
-/// Діалог для відображення звіту (X або Z)
 class XReportDialog extends StatefulWidget {
   final XReportData reportData;
   final String title;
@@ -25,89 +26,192 @@ class XReportDialog extends StatefulWidget {
 }
 
 class _XReportDialogState extends State<XReportDialog> {
-  // Змінна для відстеження стану друку
   bool _isPrinting = false;
 
-  // Метод для декодування
-  String _decodeVisualization(String base64Str) {
+  // 1. Декодуємо Base64 -> Windows1251 -> String (З ТЕГАМИ)
+  String _decodeXmlString(String base64Str) {
     try {
       final cleanStr = base64Str.replaceAll(RegExp(r'\s+'), '');
       final bytes = base64.decode(cleanStr);
-      return utf8.decode(bytes);
+      // Важливо: повертаємо чистий XML з тегами для парсингу
+      return const Windows1251Codec(allowInvalid: true).decode(bytes);
     } catch (e) {
-      return 'Не вдалося декодувати чек: $e';
+      return '';
     }
   }
 
-  // Метод друку
-  Future<void> _handlePrint() async {
-    // 1. Вмикаємо лоадер
-    setState(() {
-      _isPrinting = true;
-    });
+  // 2. Метод для створення красивого рядка даних
+  Widget _buildInfoRow(String label, String value, {bool isBold = false}) {
+    if (value.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  // 3. Головний метод парсингу XML та побудови UI
+  Widget _buildParsedReport(String xmlString) {
+    if (xmlString.isEmpty) {
+      return const Text(
+        'Не вдалося прочитати дані звіту',
+        style: TextStyle(color: Colors.red),
+      );
+    }
+
+    try {
+      final document = xml.XmlDocument.parse(xmlString);
+
+      // Функція-хелпер для безпечного отримання тексту тега
+      String getTag(String name) {
+        return document.findAllElements(name).firstOrNull?.innerText ?? '';
+      }
+
+      // Форматування дати та часу
+      String date = getTag('ORDERDATE'); // 11022026
+      String time = getTag('ORDERTIME'); // 152342
+
+      if (date.length == 8) {
+        date =
+            '${date.substring(0, 2)}.${date.substring(2, 4)}.${date.substring(4)}';
+      }
+      if (time.length >= 6) {
+        time =
+            '${time.substring(0, 2)}:${time.substring(2, 4)}:${time.substring(4)}';
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // === ШАПКА ===
+          _buildInfoRow('Організація', getTag('ORGNM'), isBold: true),
+          _buildInfoRow('Торгова точка', getTag('POINTNM')),
+          _buildInfoRow('Адреса', getTag('POINTADDR')),
+          const Divider(color: Colors.white24),
+
+          // === РЕКВІЗИТИ ===
+          _buildInfoRow('ЄДРПОУ (TIN)', getTag('TIN')),
+          _buildInfoRow('ІПН', getTag('IPN')),
+          _buildInfoRow('ФН ПРРО', getTag('CASHREGISTERNUM')),
+          _buildInfoRow('Каса №', getTag('CASHDESKNUM')),
+          const Divider(color: Colors.white24),
+
+          // === ДАНІ ЧЕКА ===
+          _buildInfoRow('Дата', date),
+          _buildInfoRow('Час', time),
+          _buildInfoRow('Номер Z-звіту', getTag('ORDERNUM'), isBold: true),
+          _buildInfoRow('Касир', getTag('CASHIER')),
+          const Divider(color: Colors.white24),
+
+          // === ФІНАНСОВІ ДАНІ (ZREPBODY) ===
+          // Тут можна додати інші поля, які є у вашому XML (SALES, RETURNS і т.д.)
+          _buildInfoRow('Службове внесення', getTag('SERVICEINPUT')),
+          _buildInfoRow('Службова видача', getTag('SERVICEOUTPUT')),
+
+          // Якщо є коментар Cashalot
+          if (getTag('CASHALOTCOMMENT').isNotEmpty)
+            _buildInfoRow('Примітка', getTag('CASHALOTCOMMENT')),
+        ],
+      );
+    } catch (e) {
+      debugPrint('XML Parse Error: $e');
+      // Якщо парсинг впав, показуємо сирий текст як запасний варіант
+      return SelectableText(
+        xmlString.replaceAll(
+          RegExp(r'<[^>]*>'),
+          '',
+        ), // Вирізаємо теги для читабельності
+        style: const TextStyle(color: Colors.white),
+      );
+    }
+  }
+
+  Future<void> _handlePrint() async {
+    setState(() => _isPrinting = true);
     final rawPrinterService = RawPrinterService();
 
     try {
-      // 2. Виконуємо друк (await)
       await rawPrinterService.printVisualization(
         visualizationBase64: widget.reportData.visualization!,
       );
 
       if (!mounted) return;
-
-      // 3. Успіх
       ToastManager.show(
         context,
         type: ToastType.success,
         title: 'Друк успішний',
         message: 'Чек успішно відправлено на принтер',
       );
-
-      // Закриваємо діалог
       Navigator.of(context).pop();
     } catch (e) {
       debugPrint("Помилка друку: $e");
       if (!mounted) return;
+      setState(() => _isPrinting = false);
 
-      // 4. Помилка - вимикаємо лоадер, щоб користувач міг спробувати ще раз
-      setState(() {
-        _isPrinting = false;
-      });
-
-      final errorMessage = e.toString().replaceAll('Exception:', '').trim();
       ToastManager.show(
         context,
         type: ToastType.error,
         title: 'Помилка друку',
-        message: errorMessage,
+        message: e.toString().replaceAll('Exception:', '').trim(),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // 1. Отримуємо XML рядок
+    final xmlString = _decodeXmlString(widget.reportData.visualization ?? '');
+
     return Dialog(
       backgroundColor: const Color(0xFF2A2A2A),
       child: Container(
-        width: 600,
+        width: 500, // Трохи зменшив ширину для акуратності
         constraints: const BoxConstraints(maxHeight: 800),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Заголовок
+            // Header
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.blue.withOpacity(0.2),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(8),
-                  topRight: Radius.circular(8),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(8),
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.receipt_long, color: Colors.blue),
+                  Icon(
+                    widget.isZRep ? Icons.assessment : Icons.receipt_long,
+                    color: Colors.blue,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -119,7 +223,6 @@ class _XReportDialogState extends State<XReportDialog> {
                       ),
                     ),
                   ),
-                  // Ховаємо хрестик, якщо йде друк, щоб не переривати процес
                   if (!_isPrinting)
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white70),
@@ -129,85 +232,15 @@ class _XReportDialogState extends State<XReportDialog> {
               ),
             ),
 
-            // Контент з прокруткою
+            // Content
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // === СЕКЦІЯ ВІЗУАЛІЗАЦІЇ ===
-                    if (widget.reportData.visualization != null &&
-                        widget.reportData.visualization!.isNotEmpty)
-                      _buildSection('Візуалізація звіту', [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E1E1E),
-                            border: Border.all(color: Colors.white12),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: SelectableText(
-                              _decodeVisualization(
-                                widget.reportData.visualization!,
-                              ),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontFamily: 'monospace',
-                                fontSize: 15,
-                                height: 1.2,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ]),
-                    if (widget.visualization != null)
-                      const SizedBox(height: 16),
-
-                    const SizedBox(height: 16),
-
-                    // Попередження
-                    if (widget.reportData.warnings.isNotEmpty)
-                      _buildSection(
-                        'Попередження',
-                        widget.reportData.warnings.map((warning) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(
-                                  Icons.warning,
-                                  color: Colors.orange,
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    warning.wtxt,
-                                    style: const TextStyle(
-                                      color: Colors.orange,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-
-                    const SizedBox(height: 16),
-                  ],
-                ),
+                padding: const EdgeInsets.all(24),
+                child: _buildParsedReport(xmlString),
               ),
             ),
 
-            // === КНОПКИ або ЛОАДЕР ===
+            // Footer (Buttons)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -221,49 +254,21 @@ class _XReportDialogState extends State<XReportDialog> {
                     )
                   : Row(
                       children: [
-                        // Кнопка Друк
                         Expanded(
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed:
-                                  _handlePrint, // Викликаємо метод обробки
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                              ),
-                              child: const Text(
-                                'Друк',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
+                          child: ElevatedButton(
+                            onPressed: _handlePrint,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        // Кнопка Готово
-                        Expanded(
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors
-                                    .grey[700], // Трохи інший колір для другорядної дії
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                              ),
-                              child: const Text(
-                                'Готово',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
+                            child: const Text(
+                              'Друк',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
                               ),
                             ),
                           ),
@@ -274,31 +279,6 @@ class _XReportDialogState extends State<XReportDialog> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildSection(String title, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(children: children),
-        ),
-      ],
     );
   }
 }

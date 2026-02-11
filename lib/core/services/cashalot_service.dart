@@ -1,5 +1,6 @@
 import '../models/cashalot_models.dart';
 import '../models/prro_info.dart';
+import '../models/pos_result.dart';
 
 /// Абстрактний інтерфейс для роботи з Cashalot API
 /// Визначає контракт для всіх реалізацій (Mock та Real)
@@ -30,6 +31,7 @@ abstract class CashalotService {
   Future<CashalotResponse> registerSale({
     required int prroFiscalNum,
     required CheckPayload check,
+    PosTransactionResult? cardData,
   });
 
   /// Службове внесення грошей (розмін)

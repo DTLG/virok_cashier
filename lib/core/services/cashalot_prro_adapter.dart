@@ -73,21 +73,24 @@ class CashalotPrroAdapter implements PrroService {
   }
 
   @override
-  Future<bool> openShift({int? prroFiscalNum}) async {
+  Future<CashalotResponse> openShift({int? prroFiscalNum}) async {
     try {
       final fiscalNum = _getPrroFiscalNum(prroFiscalNum);
       if (fiscalNum == null) {
         debugPrint('❌ [CASHALOT_ADAPTER] Не вказано фіскальний номер ПРРО');
-        return false;
+        return CashalotResponse(
+          errorCode: 'ERROR',
+          errorMessage: 'Не вказано фіскальний номер ПРРО',
+        );
       }
 
       final response = await _cashalotService.openShift(
         prroFiscalNum: fiscalNum,
       );
-      return response.isSuccess;
+      return response;
     } catch (e) {
       debugPrint('❌ [CASHALOT_ADAPTER] Помилка openShift: $e');
-      return false;
+      return CashalotResponse(errorCode: 'ERROR', errorMessage: e.toString());
     }
   }
 
@@ -143,7 +146,6 @@ class CashalotPrroAdapter implements PrroService {
         );
         return null;
       }
-
       return XReportData(
         task: 11,
         visualization: response.visualization,

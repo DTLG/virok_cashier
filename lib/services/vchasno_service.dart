@@ -221,7 +221,7 @@ class VchasnoService implements PrroService {
           if (autoOpenShift && retryCount == 0) {
             debugPrint("🔄 [RETRY] Спроба автоматичного відкриття зміни...");
             final shiftOpened = await openShift();
-            if (shiftOpened) {
+            if (shiftOpened.isSuccess) {
               debugPrint("✅ Зміна відкрита, повторюємо чек...");
               // Повторюємо з тим же чеком
               return await _printSaleWithRetry(
@@ -469,9 +469,10 @@ class VchasnoService implements PrroService {
   }
 
   @override
-  Future<bool> openShift({int? prroFiscalNum}) async {
+  Future<CashalotResponse> openShift({int? prroFiscalNum}) async {
     // prroFiscalNum не використовується в VchasnoService, але зберігаємо для сумісності з інтерфейсом
-    return await _sendSimpleTask(0);
+    await _sendSimpleTask(0);
+    return CashalotResponse(errorCode: null, errorMessage: null);
   }
 
   // --- Допоміжні методи ---
