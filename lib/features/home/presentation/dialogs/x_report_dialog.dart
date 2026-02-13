@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart' as xml; // Імпорт пакету XML
 import 'package:enough_convert/enough_convert.dart';
-import '../../../../services/x_report_data.dart';
-import '../../../../services/raw_printer_service.dart';
+import '../../../../core/models/x_report_data.dart';
+import '../../../../core/services/printing/raw_printer_service.dart';
 import '../../../../core/widgets/notificarion_toast/toast_manager.dart';
 import '../../../../core/widgets/notificarion_toast/toast_type.dart';
 

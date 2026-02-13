@@ -12,10 +12,10 @@ import '../../../../core/config/cashalot_config.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../widgets/cashalot_keys_selector.dart';
 import '../widgets/prro_selection_dialog.dart';
-import '../../../../core/services/storage_service.dart';
+import '../../../../core/services/storage/storage_service.dart';
 import '../../../../core/models/prro_info.dart';
 // import 'package:get_it/get_it.dart';
-// import '../../../../core/services/cashalot_service.dart';
+// import '../../../../core/services/cashalot/cashalot_service.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -43,8 +43,8 @@ class _SettingsPageView extends StatefulWidget {
 }
 
 class _SettingsPageViewState extends State<_SettingsPageView> {
-  String? _selectedPrroName;
   bool _isLoadingPrro = true;
+  final TextEditingController _prroController = TextEditingController();
 
   @override
   void initState() {
@@ -52,58 +52,44 @@ class _SettingsPageViewState extends State<_SettingsPageView> {
     _loadSelectedPrro();
   }
 
+  @override
+  void dispose() {
+    _prroController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadSelectedPrro() async {
     final storageService = StorageService();
     final selectedPrroNum = await storageService.getCashalotSelectedPrro();
 
-    if (selectedPrroNum != null) {
-      try {
-        // Для Vchasno не потрібно отримувати список ПРРО
-        // Використовуємо збережений номер ПРРО без перевірки списку
-        final selectedPrro = PrroInfo(
-          numFiscal: selectedPrroNum,
-          name: 'Каса $selectedPrroNum',
-        );
-        if (mounted) {
-          setState(() {
-            _selectedPrroName = selectedPrro.name;
-            _isLoadingPrro = false;
-          });
-        }
-      } catch (e) {
-        // Якщо помилка, показуємо номер
-        if (mounted) {
-          setState(() {
-            _selectedPrroName = 'ФН: $selectedPrroNum';
-            _isLoadingPrro = false;
-          });
-        }
-      }
-    } else {
-      if (mounted) {
-        setState(() {
-          _selectedPrroName = 'Не вибрано';
-          _isLoadingPrro = false;
-        });
-      }
+    final value = selectedPrroNum ?? CashalotConfig.defaultPrroFiscalNum;
+    if (mounted) {
+      setState(() {
+        _prroController.text = value;
+        _isLoadingPrro = false;
+      });
     }
   }
 
-  String _buildPrroSubtitle() {
-    if (_isLoadingPrro) return 'Завантаження...';
-    return _selectedPrroName ?? 'Не вибрано';
-  }
+  Future<void> _savePrro(String value) async {
+    final storageService = StorageService();
+    final trimmed = value.trim();
 
-  Future<void> _selectPrro(BuildContext context) async {
-    final result = await showDialog(
-      context: context,
-      builder: (context) => PrroSelectionDialog(
-        prroInfo: context.read<HomeBloc>().state.prroInfo ?? [],
-      ),
-    );
-
-    if (result != null && mounted) {
-      await _loadSelectedPrro();
+    if (trimmed.isEmpty) {
+      await storageService.setCashalotSelectedPrro(null);
+      ToastManager.show(
+        context,
+        type: ToastType.info,
+        title: 'Активну касу очищено',
+      );
+    } else {
+      await storageService.setCashalotSelectedPrro(trimmed);
+      ToastManager.show(
+        context,
+        type: ToastType.success,
+        title: 'Активну касу збережено',
+        message: 'Фіскальний номер: $trimmed',
+      );
     }
   }
 
@@ -301,9 +287,30 @@ class _SettingsPageViewState extends State<_SettingsPageView> {
                   children: [
                     SettingsTile(
                       icon: Icons.store_outlined,
-                      title: 'Активна каса',
-                      subtitle: _buildPrroSubtitle(),
-                      onTap: () => _selectPrro(context),
+                      title: 'Активна каса (фіскальний номер ПРРО)',
+                      subtitle: _isLoadingPrro
+                          ? 'Завантаження...'
+                          : 'Введіть номер каси, наприклад ${CashalotConfig.defaultPrroFiscalNum}',
+                      trailing: SizedBox(
+                        width: 180,
+                        child: TextField(
+                          controller: _prroController,
+                          keyboardType: TextInputType.number,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: 'ФН ПРРО',
+                            hintStyle: TextStyle(
+                              color: Colors.white38,
+                              fontSize: 14,
+                            ),
+                            border: InputBorder.none,
+                          ),
+                          onSubmitted: _savePrro,
+                        ),
+                      ),
                     ),
                     const Padding(
                       padding: EdgeInsets.all(16.0),

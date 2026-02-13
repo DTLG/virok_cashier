@@ -2,8 +2,8 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import '../../../../core/services/storage_service.dart';
-import '../../../../core/services/data_sync_service.dart';
+import '../../../../core/services/storage/storage_service.dart';
+import '../../../../core/services/sync/data_sync_service.dart';
 
 part 'settings_event.dart';
 part 'settings_state.dart';

@@ -17,20 +17,15 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
       title: 'Касова зміна',
       route: '/shift',
     ),
-    // NavigationItem(
-    //   icon: Icons.calendar_today,
-    //   title: 'Reservation',
-    //   route: '/reservation',
-    // ),
-    // NavigationItem(
-    //   icon: Icons.table_restaurant,
-    //   title: 'Повернення',
-    //   route: '/table-services',
-    // ),
     NavigationItem(
       icon: Icons.library_books_rounded,
       title: 'Каталог',
       route: '/menu',
+    ),
+    NavigationItem(
+      icon: Icons.assignment_return_rounded,
+      title: 'Повернення',
+      route: '/return',
     ),
     // NavigationItem(
     //   icon: Icons.build_rounded,

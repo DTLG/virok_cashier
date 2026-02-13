@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import '../../../../core/services/storage_service.dart';
-import '../../../../core/services/prro_service.dart';
+import '../../../../core/services/storage/storage_service.dart';
+import '../../../../core/services/prro/prro_service.dart';
 import '../bloc/home_bloc.dart';
 import '../widgets/navigation/sidebar_navigation.dart';
 import '../widgets/pages/page_content.dart';
@@ -180,12 +180,15 @@ class _HomePageState extends State<HomePage> {
 
       case HomeStatus.loading:
       case HomeStatus.lastOpenedShiftOpen:
+      case HomeStatus.returnLoading:
         return const HomeLoadingWidget();
 
       case HomeStatus.loggedIn:
       case HomeStatus.checkedOut:
       case HomeStatus.putOffCheck:
       case HomeStatus.error:
+      case HomeStatus.returnSuccess:
+      case HomeStatus.returnError:
         return _buildLoggedInContent(context, state);
 
       case HomeStatus.lastOpenedShiftClosed:

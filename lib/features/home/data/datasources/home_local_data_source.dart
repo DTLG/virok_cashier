@@ -1,4 +1,4 @@
-import '../../../../core/services/storage_service.dart';
+import '../../../../core/services/storage/storage_service.dart';
 
 abstract class HomeLocalDataSource {
   Future<bool> isUserLoggedIn();

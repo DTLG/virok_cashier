@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
-import 'cashalot_service.dart';
-import 'prro_service.dart';
-import '../models/cashalot_models.dart';
-import '../../services/fiscal_result.dart';
-import '../../services/x_report_data.dart';
-import '../../services/vchasno_errors.dart';
-import '../models/prro_info.dart';
+import 'package:cash_register/core/services/prro/prro_service.dart';
+import 'package:cash_register/core/models/cashalot_models.dart';
+import 'package:cash_register/core/models/fiscal_result.dart';
+import 'package:cash_register/core/models/x_report_data.dart';
+import 'package:cash_register/core/models/vchasno_errors.dart';
+import 'package:cash_register/core/models/prro_info.dart';
+import 'package:cash_register/core/services/cashalot/core/cashalot_service.dart';
 
 /// Адаптер для використання CashalotService через інтерфейс PrroService
 ///
@@ -15,11 +15,19 @@ class CashalotPrroAdapter implements PrroService {
   final int? _defaultPrroFiscalNum;
 
   CashalotPrroAdapter(this._cashalotService, {int? defaultPrroFiscalNum})
-    : _defaultPrroFiscalNum = defaultPrroFiscalNum;
+    : _defaultPrroFiscalNum = defaultPrroFiscalNum {
+    debugPrint(
+      '📋 [CASHALOT_ADAPTER] Ініціалізовано з defaultPrroFiscalNum: $defaultPrroFiscalNum',
+    );
+  }
 
   /// Отримує фіскальний номер ПРРО з параметра або використовує значення за замовчуванням
   int? _getPrroFiscalNum(int? prroFiscalNum) {
-    return prroFiscalNum ?? _defaultPrroFiscalNum;
+    final result = prroFiscalNum ?? _defaultPrroFiscalNum;
+    debugPrint(
+      '📋 [CASHALOT_ADAPTER] _getPrroFiscalNum: input=$prroFiscalNum, default=$_defaultPrroFiscalNum, result=$result',
+    );
+    return result;
   }
 
   @override
@@ -130,11 +138,20 @@ class CashalotPrroAdapter implements PrroService {
   @override
   Future<XReportData?> closeShift({int? prroFiscalNum}) async {
     try {
+      debugPrint(
+        '🔒 [CASHALOT_ADAPTER] closeShift: prroFiscalNum=$prroFiscalNum',
+      );
       final fiscalNum = _getPrroFiscalNum(prroFiscalNum);
       if (fiscalNum == null) {
-        debugPrint('❌ [CASHALOT_ADAPTER] Не вказано фіскальний номер ПРРО');
+        debugPrint(
+          '❌ [CASHALOT_ADAPTER] Не вказано фіскальний номер ПРРО (closeShift)',
+        );
         return null;
       }
+
+      debugPrint(
+        '🔒 [CASHALOT_ADAPTER] Виклик closeShift з fiscalNum=$fiscalNum',
+      );
 
       final response = await _cashalotService.closeShift(
         prroFiscalNum: fiscalNum,
@@ -197,10 +214,17 @@ class CashalotPrroAdapter implements PrroService {
     int? prroFiscalNum,
   }) async {
     try {
+      debugPrint(
+        '💸 [CASHALOT_ADAPTER] serviceOut: amount=$amount, cashier=$cashier, prroFiscalNum=$prroFiscalNum',
+      );
       final fiscalNum = _getPrroFiscalNum(prroFiscalNum);
       if (fiscalNum == null) {
-        throw Exception('Не вказано фіскальний номер ПРРО');
+        throw Exception('Не вказано фіскальний номер ПРРО (serviceOut)');
       }
+
+      debugPrint(
+        '💸 [CASHALOT_ADAPTER] Виклик serviceIssue з fiscalNum=$fiscalNum',
+      );
 
       final response = await _cashalotService.serviceIssue(
         prroFiscalNum: fiscalNum,

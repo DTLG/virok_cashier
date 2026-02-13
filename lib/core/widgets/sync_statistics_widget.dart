@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/data_sync_service.dart';
+import 'package:cash_register/core/services/sync/data_sync_service.dart';
 import 'package:cash_register/core/widgets/notificarion_toast/view.dart';
 
 class SyncStatisticsWidget extends StatefulWidget {

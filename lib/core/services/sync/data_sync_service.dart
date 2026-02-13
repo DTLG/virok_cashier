@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import '../../features/nomenclatura/domain/repositories/nomenclatura_repository.dart';
-import '../error/failures.dart';
+import 'package:cash_register/features/nomenclatura/domain/repositories/nomenclatura_repository.dart';
+import 'package:cash_register/core/error/failures.dart';
 // import 'realtime_service.dart';
 
 enum SyncStatus {

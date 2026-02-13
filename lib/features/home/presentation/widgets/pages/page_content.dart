@@ -26,6 +26,7 @@ class PageContent extends StatelessWidget {
           case '/reservation':
             return const ReservationPage();
           case '/table-services':
+          case '/return':
             return const ReturnsPage();
           case '/repair':
             return const RepairPage();

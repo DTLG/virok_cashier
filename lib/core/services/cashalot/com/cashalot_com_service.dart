@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import '../models/cashalot_models.dart';
-import '../models/prro_info.dart';
-import '../models/pos_result.dart';
-import 'cashalot_service.dart';
-import '../models/pos_terminal.dart';
+import 'package:cash_register/core/models/cashalot_models.dart';
+import 'package:cash_register/core/models/prro_info.dart';
+import 'package:cash_register/core/models/pos_result.dart';
+import 'package:cash_register/core/services/cashalot/core/cashalot_service.dart';
+import 'package:cash_register/core/models/pos_terminal.dart';
 
 class CashalotComService implements CashalotService {
   static const MethodChannel _channel = MethodChannel('com.cashalot/api');
@@ -127,6 +127,153 @@ class CashalotComService implements CashalotService {
       );
 
       return _parseResult(result, 'openShift');
+    } catch (e) {
+      return CashalotResponse(
+        errorCode: 'EXCEPTION',
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  // 1. Повернення коштів на терміналі (потрібен RRN оригінальної операції)
+  Future<CashalotResponse> returnPaymentByCard({
+    required String fiscalNum,
+    required double amount,
+    required String rrn,
+  }) async {
+    try {
+      final String amountStr = amount.toStringAsFixed(2).replaceAll('.', ',');
+
+      final result = await _channel.invokeMethod<Map<dynamic, dynamic>>(
+        'returnPaymentByCard',
+        <String, dynamic>{
+          'fiscalNum': fiscalNum,
+          'amount': amountStr,
+          'rrn': rrn,
+        },
+      );
+      return _parseResult(result, 'returnPaymentByCard');
+    } catch (e) {
+      return CashalotResponse(
+        errorCode: 'EXCEPTION',
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  // 2. Скасування транзакції (потрібен Invoice Number / номер чека термінала)
+  // Використовується, якщо помилково ввели суму, до закриття дня на терміналі
+  Future<CashalotResponse> cancelPaymentByCard({
+    required String fiscalNum,
+    required double amount,
+    required String invoiceNum,
+  }) async {
+    try {
+      final String amountStr = amount.toStringAsFixed(2).replaceAll('.', ',');
+
+      final result = await _channel.invokeMethod<Map<dynamic, dynamic>>(
+        'cancelPaymentByCard',
+        <String, dynamic>{
+          'fiscalNum': fiscalNum,
+          'amount': amountStr,
+          'invoiceNum': invoiceNum,
+        },
+      );
+      return _parseResult(result, 'cancelPaymentByCard');
+    } catch (e) {
+      return CashalotResponse(
+        errorCode: 'EXCEPTION',
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  // 3. Фіскалізація чека повернення
+  @override
+  Future<CashalotResponse> registerReturn({
+    required int prroFiscalNum,
+    required CheckPayload check,
+    required String returnReceiptFiscalNum, // Фіскальний номер чека ПРОДАЖУ
+    PosTransactionResult? cardData, // Дані про повернення коштів на картку
+  }) async {
+    try {
+      debugPrint("🔄 [REGISTER_RETURN] Формування чека повернення...");
+
+      // 1. Товари (ReceiptLst) - ідентично до продажу
+      final List<Map<String, dynamic>> receiptList = check.checkBody.map((
+        item,
+      ) {
+        final double cost = item.amount * item.price;
+        return {
+          "VendorCode": item.code,
+          "Name": item.name,
+          "Quantity": _formatQuantity(item.amount),
+          "Price": _formatMoney(item.price),
+          "Amount": _formatMoney(cost),
+          "UnitType": "шт",
+          "IsPriceIncludeVAT": true,
+          "GoodsType": 0,
+          // Можна додати коментар "Повернення"
+        };
+      }).toList();
+
+      final jsonGoodsMap = {
+        "ReceiptLst": receiptList,
+        "Comment": "Повернення товару",
+      };
+
+      // 2. Оплата (JSONPayData) - ідентично до продажу
+      double sumCash = 0.0;
+      double sumCard = 0.0;
+      double totalSum = 0.0;
+
+      for (var p in check.checkPay) {
+        totalSum += p.sum;
+        if (p.payFormNm.toUpperCase().contains("ГОТІВКА")) {
+          sumCash += p.sum;
+        } else {
+          sumCard += p.sum;
+        }
+      }
+
+      final Map<String, dynamic> jsonPayMap = {
+        "SumPayCheck": _formatMoney(totalSum),
+        "PaymentOrderType": 0,
+      };
+
+      if (sumCash > 0) jsonPayMap["SumCash"] = _formatMoney(sumCash);
+      if (sumCard > 0) jsonPayMap["SumPayByCard"] = _formatMoney(sumCard);
+
+      // Додаємо дані повернення з термінала (якщо було)
+      if (cardData != null && sumCard > 0) {
+        jsonPayMap["RRN"] = cardData.rrn;
+        if (cardData.authCode != null)
+          jsonPayMap["ApprovalCode"] = cardData.authCode;
+        if (cardData.terminalId != null)
+          jsonPayMap["TerminalID"] = cardData.terminalId;
+        if (cardData.acquireName != null)
+          jsonPayMap["AcquireName"] = cardData.acquireName;
+        // Номер чека повернення з термінала
+        // jsonPayMap["InvoiceNumber"] = ...
+      }
+
+      // Видаляємо null
+      jsonPayMap.removeWhere((key, value) => value == null);
+
+      final jsonGoods = jsonEncode(jsonGoodsMap);
+      final jsonPay = jsonEncode(jsonPayMap);
+
+      final result = await _channel.invokeMethod<Map<dynamic, dynamic>>(
+        'fiscalizeReturnCheck',
+        <String, dynamic>{
+          'fiscalNum': prroFiscalNum.toString(),
+          'jsonGoods': jsonGoods,
+          'jsonPay': jsonPay,
+          'returnReceiptFiscalNum': returnReceiptFiscalNum,
+        },
+      );
+
+      return _parseResult(result, 'fiscalizeReturnCheck');
     } catch (e) {
       return CashalotResponse(
         errorCode: 'EXCEPTION',
@@ -261,12 +408,15 @@ class CashalotComService implements CashalotService {
   @override
   Future<CashalotResponse> closeShift({required int prroFiscalNum}) async {
     try {
+      debugPrint('🔒 [CASHALOT_COM] closeShift: fiscalNum=$prroFiscalNum');
       final result = await _channel.invokeMethod<Map<dynamic, dynamic>>(
         'closeShift',
         <String, dynamic>{'fiscalNum': prroFiscalNum.toString()},
       );
+      debugPrint('🔒 [CASHALOT_COM] closeShift result: $result');
       return _parseResult(result, 'closeShift');
     } catch (e) {
+      debugPrint('❌ [CASHALOT_COM] closeShift error: $e');
       return CashalotResponse(
         errorCode: 'EXCEPTION',
         errorMessage: e.toString(),
@@ -321,6 +471,9 @@ class CashalotComService implements CashalotService {
     required String cashier,
   }) async {
     try {
+      debugPrint(
+        '💸 [CASHALOT_COM] serviceIssue: fiscalNum=$prroFiscalNum, amount=$amount',
+      );
       // Викликаємо новий C++ метод serviceOutput
       final result = await _channel.invokeMethod<Map<dynamic, dynamic>>(
         'serviceOutput',
@@ -329,8 +482,10 @@ class CashalotComService implements CashalotService {
           'amount': amount,
         },
       );
+      debugPrint('💸 [CASHALOT_COM] serviceIssue result: $result');
       return _parseResult(result, 'serviceIssue');
     } catch (e) {
+      debugPrint('❌ [CASHALOT_COM] serviceIssue error: $e');
       return CashalotResponse(
         errorCode: 'EXCEPTION',
         errorMessage: e.toString(),

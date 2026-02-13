@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../data/models/nomenclatura_model.dart';
-import '../../../../core/services/data_sync_service.dart';
-import '../../../../core/services/realtime_service.dart';
+import '../../../../core/services/sync/data_sync_service.dart';
+import '../../../../core/services/sync/realtime_service.dart';
 import '../../../../core/widgets/notificarion_toast/view.dart';
 
 /// Widget для відображення списку номенклатури з realtime оновленнями

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-import '../core/config/vchasno_config.dart';
+import 'package:cash_register/core/config/vchasno_config.dart';
 
 /// Сервіс для роботи з оплатою через термінал з очікуванням підтвердження
 ///
@@ -406,13 +406,11 @@ class TerminalPaymentResult {
   String? get bankReceiptText {
     if (info == null) return null;
     // ПриватБанк кладе сюди
-    if (info!['receipt'] != null &&
-        info!['receipt'].toString().isNotEmpty) {
+    if (info!['receipt'] != null && info!['receipt'].toString().isNotEmpty) {
       return info!['receipt'] as String?;
     }
     // Інші протоколи можуть класти сюди
-    if (info!['sliptxt'] != null &&
-        info!['sliptxt'].toString().isNotEmpty) {
+    if (info!['sliptxt'] != null && info!['sliptxt'].toString().isNotEmpty) {
       return info!['sliptxt'] as String?;
     }
     return null;

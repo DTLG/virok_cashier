@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
-import '../services/prro_service.dart';
-import '../../services/vchasno_service.dart';
-import '../services/cashalot_service.dart';
-import '../services/cashalot_prro_adapter.dart';
-import '../services/cashalot_com_service.dart';
+
+import 'package:cash_register/core/services/prro/prro_service.dart';
+import 'package:cash_register/core/services/prro/vchasno_service.dart';
+import 'package:cash_register/core/services/cashalot/core/cashalot_service.dart';
+import 'package:cash_register/core/services/cashalot/adapter/cashalot_prro_adapter.dart';
+import 'package:cash_register/core/services/cashalot/com/cashalot_com_service.dart';
 
 final GetIt _sl = GetIt.instance;
 
@@ -20,6 +22,10 @@ void setupPrroInjection({
   PrroServiceType serviceType = PrroServiceType.vchasno,
   int? defaultPrroFiscalNum,
 }) {
+  debugPrint(
+    '📋 [PRRO_INJECTION] Налаштування PrroService: type=$serviceType, defaultPrroFiscalNum=$defaultPrroFiscalNum',
+  );
+
   switch (serviceType) {
     case PrroServiceType.vchasno:
       // Реєстрація VchasnoService як PrroService
@@ -43,7 +49,11 @@ void setupPrroInjection({
       break;
 
     case PrroServiceType.cashalotCom:
-      // Реєстрація CashalotComService як PrroService
+      // Реєстрація CashalotComService як PrroService через адаптер
+      if (!_sl.isRegistered<CashalotComService>()) {
+        _sl.registerLazySingleton<CashalotComService>(() => CashalotComService());
+      }
+
       _sl.registerLazySingleton<PrroService>(
         () => CashalotPrroAdapter(
           _sl<CashalotComService>(),

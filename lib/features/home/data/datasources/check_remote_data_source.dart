@@ -10,7 +10,9 @@ class CheckRemoteDataSource {
 
     double? amount,
     String? paymentForm,
-    String? status,
+    String? status, 
+    String? rrn,
+      
   }) async {
     final nowUtc = DateTime.now().toIso8601String();
     final row = await client
@@ -24,6 +26,7 @@ class CheckRemoteDataSource {
           'kkm_check_number': _generateCheckNumber(),
           if (amount != null) 'amount': amount,
           if (paymentForm != null) 'payment_form': paymentForm,
+          "RRN": rrn,
         })
         .select()
         .single();

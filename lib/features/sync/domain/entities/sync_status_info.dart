@@ -1,4 +1,4 @@
-import '../../../../core/services/data_sync_service.dart';
+import '../../../../core/services/sync/data_sync_service.dart';
 
 class SyncStatusInfo {
   final bool isConnected;

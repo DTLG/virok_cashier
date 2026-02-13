@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
-import '../../../../core/services/data_sync_service.dart';
+import '../../../../core/services/sync/data_sync_service.dart';
 
 /// Інтерфейс віддаленого джерела даних для синхронізації
 abstract class SyncRemoteDataSource {

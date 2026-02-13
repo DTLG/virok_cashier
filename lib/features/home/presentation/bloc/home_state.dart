@@ -11,6 +11,9 @@ enum HomeStatus {
   lastOpenedShiftClosed,
   cleanupCashalot,
   cleanupSuccess,
+  returnLoading,
+  returnSuccess,
+  returnError,
 }
 
 class HomeViewState extends Equatable {
@@ -28,6 +31,7 @@ class HomeViewState extends Equatable {
   final FiscalResult? fiscalResult; // Результат фіскалізації для показу QR
   final XReportData? xReportData; // Дані X-звіту для показу діалогу
   final List<PrroInfo>? prroInfo;
+  final FiscalResult? returnResult; // Результат повернення
 
   const HomeViewState({
     this.status = HomeStatus.initial,
@@ -44,6 +48,7 @@ class HomeViewState extends Equatable {
     this.fiscalResult,
     this.xReportData,
     this.prroInfo,
+    this.returnResult,
   });
 
   HomeViewState copyWith({
@@ -61,11 +66,13 @@ class HomeViewState extends Equatable {
     FiscalResult? fiscalResult,
     XReportData? xReportData,
     List<PrroInfo>? prroInfo,
+    FiscalResult? returnResult,
     // Спеціальні прапорці для явного встановлення null
     bool clearOpenedShiftAt = false,
     bool clearXReportData = false,
     bool clearFiscalResult = false,
     bool clearVchasnoError = false,
+    bool clearReturnResult = false,
   }) {
     return HomeViewState(
       status: status ?? this.status,
@@ -88,6 +95,9 @@ class HomeViewState extends Equatable {
           : (fiscalResult ?? this.fiscalResult),
       xReportData: clearXReportData ? null : (xReportData ?? this.xReportData),
       prroInfo: prroInfo ?? this.prroInfo,
+      returnResult: clearReturnResult
+          ? null
+          : (returnResult ?? this.returnResult),
     );
   }
 
@@ -107,6 +117,7 @@ class HomeViewState extends Equatable {
     fiscalResult,
     xReportData,
     prroInfo,
+    returnResult,
   ];
 }
 

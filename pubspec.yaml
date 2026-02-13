@@ -31,6 +31,7 @@ dependencies:
   open_filex: ^4.3.2
   enough_convert: ^1.6.0
   xml: ^6.6.1
+  bloc_test: ^10.0.0
 
 dev_dependencies:
   flutter_test:

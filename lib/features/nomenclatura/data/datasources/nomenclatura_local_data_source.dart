@@ -10,6 +10,9 @@ abstract class NomenclaturaLocalDataSource {
   Future<NomenclaturaModel?> getCachedNomenclaturaByGuid(String guid);
   Future<List<NomenclaturaModel>> searchCachedNomenclatura(String query);
 
+  /// Пошук товару за штрихкодом
+  Future<NomenclaturaModel?> searchByBarcode(String barcode);
+
   /// Отримує кореневі категорії (isFolder = true і parent_guid = null)
   Future<List<NomenclaturaModel>> getCachedCategories();
 
@@ -102,7 +105,7 @@ class NomenclaturaLocalDataSourceImpl implements NomenclaturaLocalDataSource {
       // Оновлюємо search_name для всіх існуючих записів
       await db.execute('''
         UPDATE nomenclatura 
-        SET search_name = LOWER(article || name)
+        SET search_name = LOWER(article|| barcodes || name)
         WHERE search_name IS NULL OR search_name = ''
       ''');
     }
@@ -344,6 +347,44 @@ class NomenclaturaLocalDataSourceImpl implements NomenclaturaLocalDataSource {
       return result;
     } catch (e) {
       throw CacheFailure('Failed to search cached nomenclatura: $e');
+    }
+  }
+
+  @override
+  Future<NomenclaturaModel?> searchByBarcode(String barcode) async {
+    final db = await database;
+
+    try {
+      // Пошук по полю barcodes (штрихкоди зберігаються як рядок з комами)
+      final nomenclaturaRows = await db.query(
+        'nomenclatura',
+        where:
+            '(barcodes LIKE ? OR barcodes LIKE ? OR barcodes LIKE ? OR barcodes = ?) AND is_folder = ?',
+        whereArgs: ['$barcode,%', '%,$barcode,%', '%,$barcode', barcode, 0],
+        limit: 1,
+      );
+
+      if (nomenclaturaRows.isEmpty) {
+        return null;
+      }
+
+      final row = nomenclaturaRows.first;
+      return NomenclaturaModel(
+        guid: row['guid'] as String,
+        createdAt: DateTime.parse(row['created_at'] as String),
+        name: row['name'] as String,
+        article: row['article'] as String,
+        unitName: row['unit_name'] as String,
+        unitGuid: row['unit_guid'] as String,
+        isFolder: (row['is_folder'] as int) == 1,
+        parentGuid: row['parent_guid'] as String?,
+        description: row['description'] as String?,
+        barcodes: (row['barcodes'] as String?) ?? '',
+        prices: (row['price'] as num?)?.toDouble() ?? 0.0,
+        searchName: (row['search_name'] as String?) ?? '',
+      );
+    } catch (e) {
+      throw CacheFailure('Failed to search by barcode: $e');
     }
   }
 

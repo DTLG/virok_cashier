@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'cashalot_token_storage.dart';
+import 'package:cash_register/core/services/cashalot/storage/cashalot_token_storage.dart';
 
 class CashalotApiClient {
   final String baseUrl; // e.g., https://fsapi.cashalot.org.ua

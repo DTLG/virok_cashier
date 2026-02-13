@@ -56,6 +56,13 @@ class CheckPayload {
     "CHECKBODY": checkBody.map((e) => e.toJson()).toList(),
     "CHECKPAY": checkPay.map((e) => e.toJson()).toList(),
   };
+
+  static CheckPayload empty() => CheckPayload(
+    checkHead: CheckHead(cashier: ''),
+    checkTotal: CheckTotal(sum: 0.0),
+    checkBody: [],
+    checkPay: [],
+  );
 }
 
 /// Заголовок чека

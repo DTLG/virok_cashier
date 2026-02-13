@@ -96,7 +96,8 @@ class NomenclaturaModel {
 
     final name = json['name'] ?? '';
     final article = json['article'] ?? '';
-    final searchName = '${article}${name}'.toLowerCase();
+    // search_name включає артикул, штрихкоди та назву для пошуку
+    final searchName = '${article}${barcodes}${name}'.toLowerCase();
 
     return NomenclaturaModel(
       createdAt: DateTime.parse(json['created_at']),

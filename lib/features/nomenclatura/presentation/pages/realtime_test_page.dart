@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../../../../core/services/app_initialization_service.dart';
-import '../../../../core/services/realtime_service.dart';
-import '../../../../core/services/data_sync_service.dart';
+import '../../../../core/services/sync/app_initialization_service.dart';
+import '../../../../core/services/sync/realtime_service.dart';
+import '../../../../core/services/sync/data_sync_service.dart';
 
 /// Сторінка для тестування realtime функціональності
 class RealtimeTestPage extends StatefulWidget {

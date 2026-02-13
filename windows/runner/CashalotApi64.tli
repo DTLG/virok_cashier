@@ -1,0 +1,530 @@
+﻿// Created by Microsoft (R) C/C++ Compiler Version 14.44.35215.0 (2acbca31).
+//
+// D:\flutter_proj\cash_register\cash_register\build\windows\x64\runner\cash_register.dir\Debug\CashalotApi64.tli
+//
+// Wrapper implementations for type library D:\\Cashalot\\CashalotApi64.dll
+// compiler-generated file - DO NOT EDIT!
+
+#pragma once
+
+//
+// interface ICashalotApiRetVal wrapper method implementations
+//
+
+inline VARIANT_BOOL ICashalotApiRetVal::GetReturn ( ) {
+    VARIANT_BOOL _result = 0;
+    HRESULT _hr = get_Return(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline void ICashalotApiRetVal::PutReturn ( VARIANT_BOOL pField ) {
+    HRESULT _hr = put_Return(pField);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline _bstr_t ICashalotApiRetVal::GetDescription ( ) {
+    BSTR _result = 0;
+    HRESULT _hr = get_Description(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline void ICashalotApiRetVal::PutDescription ( _bstr_t pField ) {
+    HRESULT _hr = put_Description(pField);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline _bstr_t ICashalotApiRetVal::GetShiftID ( ) {
+    BSTR _result = 0;
+    HRESULT _hr = get_ShiftID(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline void ICashalotApiRetVal::PutShiftID ( _bstr_t pField ) {
+    HRESULT _hr = put_ShiftID(pField);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline _bstr_t ICashalotApiRetVal::GetReceiptFiscalNum ( ) {
+    BSTR _result = 0;
+    HRESULT _hr = get_ReceiptFiscalNum(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline void ICashalotApiRetVal::PutReceiptFiscalNum ( _bstr_t pField ) {
+    HRESULT _hr = put_ReceiptFiscalNum(pField);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline long ICashalotApiRetVal::GetReceiptLocalNum ( ) {
+    long _result = 0;
+    HRESULT _hr = get_ReceiptLocalNum(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline void ICashalotApiRetVal::PutReceiptLocalNum ( long pField ) {
+    HRESULT _hr = put_ReceiptLocalNum(pField);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline _bstr_t ICashalotApiRetVal::GetJsonVal ( ) {
+    BSTR _result = 0;
+    HRESULT _hr = get_JsonVal(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline void ICashalotApiRetVal::PutJsonVal ( _bstr_t pField ) {
+    HRESULT _hr = put_JsonVal(pField);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline HRESULT ICashalotApiRetVal::Clear ( VARIANT_BOOL bNoDestroy ) {
+    HRESULT _hr = raw_Clear(bNoDestroy);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline _bstr_t ICashalotApiRetVal::GetXML ( ) {
+    BSTR _result = 0;
+    HRESULT _hr = get_XML(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline void ICashalotApiRetVal::PutXML ( _bstr_t pField ) {
+    HRESULT _hr = put_XML(pField);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline long ICashalotApiRetVal::GetType ( ) {
+    long _result = 0;
+    HRESULT _hr = get_Type(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline void ICashalotApiRetVal::PutType ( long pField ) {
+    HRESULT _hr = put_Type(pField);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+//
+// interface ICashaLotApiAddin wrapper method implementations
+//
+
+inline _variant_t ICashaLotApiAddin::GetInterfaceRevision ( ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetInterfaceRevision(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _bstr_t ICashaLotApiAddin::GetLastError ( ) {
+    BSTR _result = 0;
+    HRESULT _hr = raw_GetLastError(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::SetParameter ( _bstr_t Name, _bstr_t Value ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_SetParameter(Name, Value, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::OpenShift ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_OpenShift(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::CloseShift ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_CloseShift(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetVersion ( ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetVersion(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::PrintTextDocument ( _bstr_t FiscalNumberRRO, _bstr_t DocumentPackage ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_PrintTextDocument(FiscalNumberRRO, DocumentPackage, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::PrintXReport ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_PrintXReport(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetCurrentStatus ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetCurrentStatus(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::PrintZReport ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_PrintZReport(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _bstr_t ICashaLotApiAddin::GetReceiptFiscalNumberByLocalNumber ( _bstr_t FiscalNumberRRO, long ReceiptLocalNumber ) {
+    BSTR _result = 0;
+    HRESULT _hr = raw_GetReceiptFiscalNumberByLocalNumber(FiscalNumberRRO, ReceiptLocalNumber, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline long ICashaLotApiAddin::GetReceiptLocalNumberByFiscalNumber ( _bstr_t FiscalNumberRRO, _bstr_t ReceiptFiscalNumber ) {
+    long _result = 0;
+    HRESULT _hr = raw_GetReceiptLocalNumberByFiscalNumber(FiscalNumberRRO, ReceiptFiscalNumber, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline _bstr_t ICashaLotApiAddin::GetReceiptXML ( _bstr_t FiscalNumberRRO, _bstr_t ReceiptFiscalNumber ) {
+    BSTR _result = 0;
+    HRESULT _hr = raw_GetReceiptXML(FiscalNumberRRO, ReceiptFiscalNumber, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::ShowReceipt ( _bstr_t FiscalNumberRRO, _bstr_t ReceiptFiscalNumber ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_ShowReceipt(FiscalNumberRRO, ReceiptFiscalNumber, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::FiscalizeCheck ( _bstr_t FiscalNumberRRO, _bstr_t strJSONData, _bstr_t strJSONPayData ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_FiscalizeCheck(FiscalNumberRRO, strJSONData, strJSONPayData, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::FiscalizeReturnCheck ( _bstr_t FiscalNumberRRO, _bstr_t strJSONData, _bstr_t strJSONPayData, _bstr_t strFiscalNumberReturnCheck ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_FiscalizeReturnCheck(FiscalNumberRRO, strJSONData, strJSONPayData, strFiscalNumberReturnCheck, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::ServiceInput ( _bstr_t FiscalNumberRRO, const _variant_t & Amount ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_ServiceInput(FiscalNumberRRO, Amount, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::ServiceOutput ( _bstr_t FiscalNumberRRO, const _variant_t & Amount ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_ServiceOutput(FiscalNumberRRO, Amount, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::ServiceInputEx ( _bstr_t FiscalNumberRRO, const _variant_t & Amount ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_ServiceInputEx(FiscalNumberRRO, Amount, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::ServiceOutputEx ( _bstr_t FiscalNumberRRO, const _variant_t & Amount ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_ServiceOutputEx(FiscalNumberRRO, Amount, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetXReport ( _bstr_t FiscalNumberRRO, VARIANT_BOOL ShowPrintReport ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetXReport(FiscalNumberRRO, ShowPrintReport, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetLastZReport ( _bstr_t FiscalNumberRRO, VARIANT_BOOL ShowPrintReport ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetLastZReport(FiscalNumberRRO, ShowPrintReport, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetFirstReceiptByPeriod ( _bstr_t FiscalNumberRRO, _bstr_t dateBeg, _bstr_t dateEnd ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetFirstReceiptByPeriod(FiscalNumberRRO, dateBeg, dateEnd, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetFirstReceiptByShift ( _bstr_t FiscalNumberRRO, _bstr_t ShiftID ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetFirstReceiptByShift(FiscalNumberRRO, ShiftID, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetNextReceipt ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetNextReceipt(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetFirstZReportByPeriod ( _bstr_t FiscalNumberRRO, _bstr_t dateBeg, _bstr_t dateEnd ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetFirstZReportByPeriod(FiscalNumberRRO, dateBeg, dateEnd, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetZReportByShift ( _bstr_t FiscalNumberRRO, _bstr_t ShiftID ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetZReportByShift(FiscalNumberRRO, ShiftID, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetNextZReport ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetNextZReport(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::SetParameterEx ( _bstr_t FiscalNumberRRO, _bstr_t Name, _bstr_t Value ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_SetParameterEx(FiscalNumberRRO, Name, Value, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::PrintPReportDate ( _bstr_t FiscalNumberRRO, _bstr_t dtBeg, _bstr_t dtEnd, _bstr_t isShort ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_PrintPReportDate(FiscalNumberRRO, dtBeg, dtEnd, isShort, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::SetOfflineMode ( _bstr_t FiscalNumberRRO, _bstr_t AutoExitToOnline ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_SetOfflineMode(FiscalNumberRRO, AutoExitToOnline, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::TryGoToOnlineMode ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_TryGoToOnlineMode(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::SyncGoodsWithBalance ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_SyncGoodsWithBalance(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::SyncBalanceOnGoods ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_SyncBalanceOnGoods(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::StornoCheck ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_StornoCheck(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::ShowReceiptQRCode ( _bstr_t FiscalNumberRRO, _bstr_t ReceiptFiscalNumber ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_ShowReceiptQRCode(FiscalNumberRRO, ReceiptFiscalNumber, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::SendCheckToCustomer ( _bstr_t FiscalNumberRRO, _bstr_t ReceiptFiscalNumber, _bstr_t SendingAddressType, _bstr_t SendingAddress ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_SendCheckToCustomer(FiscalNumberRRO, ReceiptFiscalNumber, SendingAddressType, SendingAddress, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetPOSTerminalList ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetPOSTerminalList(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::SetDefaultPOSterminal ( _bstr_t FiscalNumberRRO, _bstr_t terminalID ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_SetDefaultPOSterminal(FiscalNumberRRO, terminalID, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::PrintReportGoods ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_PrintReportGoods(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::PayByPaymentCard ( _bstr_t FiscalNumberRRO, const _variant_t & SumPayByCard, _bstr_t OtherParam ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_PayByPaymentCard(FiscalNumberRRO, SumPayByCard, OtherParam, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::ReturnPaymentByPaymentCard ( _bstr_t FiscalNumberRRO, const _variant_t & SumPayByCard, _bstr_t RRNCodeIn, _bstr_t OtherParam ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_ReturnPaymentByPaymentCard(FiscalNumberRRO, SumPayByCard, RRNCodeIn, OtherParam, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::CancelPaymentByPaymentCard ( _bstr_t FiscalNumberRRO, const _variant_t & SumPayByCard, _bstr_t InvoiceNumber, _bstr_t OtherParam ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_CancelPaymentByPaymentCard(FiscalNumberRRO, SumPayByCard, InvoiceNumber, OtherParam, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::PayPartPaymentByPaymentCard ( _bstr_t FiscalNumberRRO, const _variant_t & SumPayByCard, _bstr_t CountParts, _bstr_t OtherParam ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_PayPartPaymentByPaymentCard(FiscalNumberRRO, SumPayByCard, CountParts, OtherParam, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::ReturnPartPaymentByPaymentCard ( _bstr_t FiscalNumberRRO, const _variant_t & SumPayByCard, _bstr_t RRNCodeIn, _bstr_t IsPartialReturn, _bstr_t ServiceDogNum, _bstr_t OtherParam ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_ReturnPartPaymentByPaymentCard(FiscalNumberRRO, SumPayByCard, RRNCodeIn, IsPartialReturn, ServiceDogNum, OtherParam, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::CreatePostponedReceipt ( _bstr_t FiscalNumberRRO, _bstr_t strJSONData, _bstr_t strJSONPayData ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_CreatePostponedReceipt(FiscalNumberRRO, strJSONData, strJSONPayData, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::FiscalizePostponedReceipt ( _bstr_t FiscalNumberRRO, _bstr_t ReceiptID, _bstr_t OtherParam ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_FiscalizePostponedReceipt(FiscalNumberRRO, ReceiptID, OtherParam, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetFirstPostponedReceipt ( _bstr_t FiscalNumberRRO, _bstr_t StartDate, _bstr_t EndDate ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetFirstPostponedReceipt(FiscalNumberRRO, StartDate, EndDate, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetNextPostponedReceipt ( _bstr_t FiscalNumberRRO ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetNextPostponedReceipt(FiscalNumberRRO, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetPostponedReceiptByID ( _bstr_t FiscalNumberRRO, _bstr_t ReceiptID ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetPostponedReceiptByID(FiscalNumberRRO, ReceiptID, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::GetPostponedReceiptByWaybillNumber ( _bstr_t FiscalNumberRRO, _bstr_t WaybillNumber ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_GetPostponedReceiptByWaybillNumber(FiscalNumberRRO, WaybillNumber, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline _variant_t ICashaLotApiAddin::ShowReceiptByID ( _bstr_t FiscalNumberRRO, _bstr_t ReceiptID ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_ShowReceiptByID(FiscalNumberRRO, ReceiptID, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}

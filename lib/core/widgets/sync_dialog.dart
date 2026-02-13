@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/data_sync_service.dart';
+import 'package:cash_register/core/services/sync/data_sync_service.dart';
 
 class SyncDialog extends StatefulWidget {
   final DataSyncInfo syncInfo;
@@ -245,53 +245,53 @@ class _SyncDialogState extends State<SyncDialog> {
             Navigator.of(context).pop(true);
           }
         });
-             },
-     );
-   }
+      },
+    );
+  }
 
-   Future<void> _forceSyncData() async {
-     setState(() {
-       _isLoading = true;
-       _errorMessage = null;
-       _progress = 0.0;
-       _currentMessage = 'Початок примусової синхронізації...';
-     });
+  Future<void> _forceSyncData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _progress = 0.0;
+      _currentMessage = 'Початок примусової синхронізації...';
+    });
 
-     final result = await widget.syncService.forceSyncAllData(
-       onProgress: (message, progress) {
-         setState(() {
-           _currentMessage = message;
-           _progress = progress;
-         });
-       },
-     );
+    final result = await widget.syncService.forceSyncAllData(
+      onProgress: (message, progress) {
+        setState(() {
+          _currentMessage = message;
+          _progress = progress;
+        });
+      },
+    );
 
-     result.fold(
-       (failure) {
-         setState(() {
-           _isLoading = false;
-           _errorMessage = failure.toString();
-         });
-       },
-       (_) {
-         setState(() {
-           _isLoading = false;
-           _currentMessage = 'Примусова синхронізація завершена успішно!';
-           _progress = 1.0;
-         });
+    result.fold(
+      (failure) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = failure.toString();
+        });
+      },
+      (_) {
+        setState(() {
+          _isLoading = false;
+          _currentMessage = 'Примусова синхронізація завершена успішно!';
+          _progress = 1.0;
+        });
 
-         // Закриваємо діалог через короткий час
-         Future.delayed(const Duration(seconds: 1), () {
-           if (mounted) {
-             Navigator.of(context).pop(true);
-           }
-         });
-       },
-     );
-   }
- }
- 
- // Функція-помічник для показу діалогу
+        // Закриваємо діалог через короткий час
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            Navigator.of(context).pop(true);
+          }
+        });
+      },
+    );
+  }
+}
+
+// Функція-помічник для показу діалогу
 Future<bool?> showSyncDialog({
   required BuildContext context,
   required DataSyncInfo syncInfo,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/enhanced_sync_service.dart';
+import 'package:cash_register/core/services/sync/enhanced_sync_service.dart';
 
 class EnhancedSyncDialog extends StatefulWidget {
   final EnhancedSyncService syncService;

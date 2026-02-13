@@ -6,6 +6,7 @@ class StorageService {
   static const String _isLoggedInKey = 'is_logged_in';
 
   // Ключі для Cashalot
+  static const String _cashalotFolderPathKey = 'cashalot_folder_path';
   static const String _cashalotKeyPathKey = 'cashalot_key_path';
   static const String _cashalotCertPathKey = 'cashalot_cert_path';
   static const String _cashalotKeyPasswordKey = 'cashalot_key_password';
@@ -106,6 +107,18 @@ class StorageService {
   }
 
   // Методи для зберігання шляхів до Cashalot ключів
+  Future<void> setCashalotFolderPath(String? path) async {
+    if (path == null) {
+      await remove(_cashalotFolderPathKey);
+    } else {
+      await setString(_cashalotFolderPathKey, path);
+    }
+  }
+
+  Future<String?> getCashalotFolderPath() async {
+    return getString(_cashalotFolderPathKey);
+  }
+
   Future<void> setCashalotKeyPath(String? path) async {
     if (path == null) {
       await remove(_cashalotKeyPathKey);

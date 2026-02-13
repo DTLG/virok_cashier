@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:convert';
 import 'dart:io';
-import '../models/cashalot_models.dart';
-import '../models/prro_info.dart';
-import '../models/pos_result.dart';
+import 'package:cash_register/core/models/cashalot_models.dart';
+import 'package:cash_register/core/models/prro_info.dart';
+import 'package:cash_register/core/models/pos_result.dart';
+import 'package:cash_register/core/services/cashalot/api/cashalot_api_client.dart';
 import 'cashalot_service.dart';
-import 'cashalot_api_client.dart';
 
 /// Реальна реалізація CashalotService
 /// Використовує CashalotApiClient для роботи з реальним API

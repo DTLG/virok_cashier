@@ -2,13 +2,13 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
-import '../../../../core/services/storage_service.dart';
-import '../../../../core/services/prro_service.dart';
+import '../../../../core/services/storage/storage_service.dart';
+import '../../../../core/services/prro/prro_service.dart';
 import '../../../../core/models/cashalot_models.dart';
-import '../../../../services/vchasno_errors.dart';
-import '../../../../services/fiscal_result.dart';
-import '../../../../services/x_report_data.dart';
-import '../../../../services/terminal_payment_service.dart';
+import '../../../../core/models/vchasno_errors.dart';
+import '../../../../core/models/fiscal_result.dart';
+import '../../../../core/models/x_report_data.dart';
+import '../../../../core/services/payments/terminal_payment_service.dart';
 import '../../data/datasources/shift_remote_data_source.dart';
 import '../../data/datasources/check_remote_data_source.dart';
 import '../../../login/domain/entities/user_data.dart';
@@ -16,7 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/models/prro_info.dart';
 import '../../../../core/models/pos_result.dart';
 import '../../../../core/models/pos_terminal.dart';
-import '../../../../core/services/cashalot_com_service.dart';
+import '../../../../core/services/cashalot/com/cashalot_com_service.dart';
 
 part 'home_event.dart';
 part 'home_state.dart';
@@ -59,6 +59,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     on<XReportEvent>(_onXReport);
     on<ClearXReportData>(_onClearXReportData);
     on<CleanupCashalotEvent>(_onCleanupCashalot);
+    on<ReturnCheckEvent>(_onReturnCheck);
+    on<ShiftClosedEvent>(_onShiftClosed);
   }
 
   /// Публічний метод для тестового депозиту (для використання з інших модулів)
@@ -612,6 +614,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
         paymentForm: state.paymentForm,
         cashierName: cashierName,
         fiscalNumber: fiscalResult.docNumber,
+        rrn: cardResult?.rrn ?? '',
       );
 
       // 7. Успішне завершення
@@ -675,6 +678,23 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
 
       // 2. ВІДПРАВЛЯЄМО ЗАПИТ НА ТЕРМІНАЛ (РЕАЛЬНИЙ ВИКЛИК)
       // Цей метод "заморозить" виконання, поки клієнт не прикладе картку до термінала
+      // Тестова mock відповідь для CashalotResponse
+      // Щоб змінити поведінку на справжню - використовуй виклик payByCard нижче
+
+      // Закоментуй цей блок щоб використати справжній термінал:
+      // final response = CashalotResponse(
+      //   data: {
+      //     "RRN": "MOCK123456789",
+      //     "ApprovalCode": "MOCK654321",
+      //     "InvoiceNumber": "MOCKINV123",
+      //     "TerminalID": "MOCKTERM001",
+      //     "PAN": "MOCK444455******6677",
+      //     "IssuerName": "VISA",
+      //     "AcquireName": "MockBank",
+      //     "TransactionDate": DateTime.now().toIso8601String(),
+      //   },
+      // );
+
       final response = await cashalotCom.payByCard(
         fiscalNum: prroFiscalNum.toString(),
         amount: amount,
@@ -740,12 +760,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     required String paymentForm,
     required String cashierName,
     String? fiscalNumber,
+    String? rrn,
   }) async {
     try {
       final checkId = await checkRemoteDataSource.createCheck(
         amount: totalSum,
         paymentForm: paymentForm,
         seller: state.user?.email ?? '',
+        rrn: rrn,
         // status: 'Fiscalized', // Можна додати статус
       );
 
@@ -924,6 +946,13 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     }
   }
 
+  /// Оновлення стану після закриття зміни (без фіскальних операцій)
+  /// Використовується коли зміна закрита через prroService напряму (наприклад, з діалогу)
+  void _onShiftClosed(ShiftClosedEvent event, Emitter<HomeViewState> emit) {
+    debugPrint('🔒 [SHIFT_CLOSED] Оновлення стану: зміна закрита');
+    emit(state.copyWith(status: HomeStatus.loggedIn, clearOpenedShiftAt: true));
+  }
+
   /// Службове внесення грошей
   Future<void> _onServiceDeposit(
     ServiceDepositEvent event,
@@ -953,15 +982,23 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
       );
       if (reportData != null) {
         debugPrint('✅ [SERVICE_DEPOSIT] Службове внесення успішно виконано!');
-        emit(state.copyWith(xReportData: reportData));
+        // Якщо зміна була закрита, але Cashalot автоматично відкрив її
+        // під час службового внесення – оновлюємо локальний стан openedShiftAt.
+        final bool wasShiftClosed = state.openedShiftAt == null;
+        emit(
+          state.copyWith(
+            status: HomeStatus.loggedIn,
+            xReportData: reportData,
+            openedShiftAt:
+                wasShiftClosed ? DateTime.now() : state.openedShiftAt,
+          ),
+        );
       } else {
         debugPrint('❌ [SERVICE_DEPOSIT] Не вдалося отримати звіт');
         emit(state.copyWith(status: HomeStatus.error));
       }
 
-      debugPrint('✅ [SERVICE_DEPOSIT] Службове внесення успішно виконано!');
-
-      emit(state.copyWith(status: HomeStatus.loggedIn));
+      debugPrint('✅ [SERVICE_DEPOSIT] Службове внесення успішно виконано (стан оновлено)');
     } catch (e) {
       debugPrint('❌ [SERVICE_DEPOSIT] Помилка: $e');
       emit(
@@ -1079,6 +1116,126 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
       debugPrint('❌ [CLEANUP_CASHALOT] Помилка: $e');
       emit(
         state.copyWith(status: HomeStatus.error, errorMessage: e.toString()),
+      );
+    }
+  }
+
+  /// Обробка повернення чека
+  Future<void> _onReturnCheck(
+    ReturnCheckEvent event,
+    Emitter<HomeViewState> emit,
+  ) async {
+    try {
+      emit(state.copyWith(status: HomeStatus.returnLoading));
+      debugPrint('🔄 [RETURN] Початок повернення чека...');
+
+      final prroFiscalNum = await _getActivePrroFiscalNum();
+      final cashalotCom = GetIt.instance<CashalotComService>();
+
+      PosTransactionResult? terminalResult;
+
+      // 1. Якщо повернення на КАРТКУ - спочатку повертаємо гроші через термінал
+      if (event.isCardReturn) {
+        if (event.originalRrn == null || event.originalRrn!.isEmpty) {
+          debugPrint('❌ [RETURN] Для повернення на картку потрібен RRN!');
+          emit(
+            state.copyWith(
+              status: HomeStatus.returnError,
+              errorMessage:
+                  'Для повернення на картку потрібен RRN оригінального чека!',
+            ),
+          );
+          return;
+        }
+
+        debugPrint('💳 [RETURN] Повернення коштів на картку...');
+        debugPrint('   RRN: ${event.originalRrn}');
+        debugPrint('   Сума: ${event.totalSum}');
+
+        // Викликаємо метод Cashalot для повернення на терміналі
+        final returnRes = await cashalotCom.returnPaymentByCard(
+          fiscalNum: prroFiscalNum.toString(),
+          amount: event.totalSum,
+          rrn: event.originalRrn!,
+        );
+
+        if (returnRes.errorCode != null) {
+          debugPrint('❌ [RETURN] Помилка термінала: ${returnRes.errorMessage}');
+          emit(
+            state.copyWith(
+              status: HomeStatus.returnError,
+              errorMessage: 'Помилка термінала: ${returnRes.errorMessage}',
+            ),
+          );
+          return;
+        }
+
+        // Парсимо дані транзакції повернення (новий RRN, authCode...)
+        final data = returnRes.data!;
+        debugPrint('✅ [RETURN] Повернення на картку успішне! Дані: $data');
+
+        terminalResult = PosTransactionResult(
+          isSuccess: true,
+          rrn: data['RRN']?.toString(),
+          authCode: data['ApprovalCode']?.toString(),
+          terminalId: data['TerminalID']?.toString(),
+          cardPan: data['PAN']?.toString(),
+          paymentSystem: data['IssuerName']?.toString(),
+          acquireName: data['AcquireName']?.toString(),
+          transactionDate: data['TransactionDate']?.toString(),
+        );
+      }
+
+      // 2. Фіскалізуємо чек повернення
+      debugPrint('📝 [RETURN] Фіскалізація чека повернення...');
+      debugPrint(
+        '   Оригінальний фіскальний номер: ${event.originalFiscalNumber}',
+      );
+
+      final fiscalRes = await cashalotCom.registerReturn(
+        prroFiscalNum: prroFiscalNum,
+        check: event.checkPayload,
+        returnReceiptFiscalNum: event.originalFiscalNumber,
+        cardData: terminalResult,
+      );
+
+      if (fiscalRes.errorCode == null) {
+        debugPrint('✅ [RETURN] Повернення успішно фіскалізовано!');
+
+        // Формуємо результат
+        final returnResult = FiscalResult.success(
+          message: 'Повернення успішно оформлено',
+          qrUrl: fiscalRes.data?['qrUrl']?.toString(),
+          docNumber: fiscalRes.data?['docNumber']?.toString(),
+          totalAmount: event.totalSum,
+        );
+
+        emit(
+          state.copyWith(
+            status: HomeStatus.returnSuccess,
+            returnResult: returnResult,
+          ),
+        );
+      } else {
+        debugPrint(
+          '❌ [RETURN] Помилка фіскалізації: ${fiscalRes.errorMessage}',
+        );
+        emit(
+          state.copyWith(
+            status: HomeStatus.returnError,
+            errorMessage:
+                'Помилка фіскалізації повернення: ${fiscalRes.errorMessage}',
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ [RETURN] Помилка: $e');
+      emit(
+        state.copyWith(
+          status: HomeStatus.returnError,
+          errorMessage:
+              'Помилка повернення: ${e.toString().replaceAll('Exception:', '').trim()}',
+        ),
       );
     }
   }

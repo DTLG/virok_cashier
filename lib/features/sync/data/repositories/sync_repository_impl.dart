@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
-import '../../../../core/services/data_sync_service.dart';
+import '../../../../core/services/sync/data_sync_service.dart';
 import '../../domain/repositories/sync_repository.dart';
 import '../datasources/sync_local_data_source.dart';
 import '../datasources/sync_remote_data_source.dart';

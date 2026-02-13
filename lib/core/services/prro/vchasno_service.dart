@@ -4,15 +4,15 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
-import '../core/config/vchasno_config.dart';
-import '../core/models/cashalot_models.dart';
-import '../core/services/storage_service.dart';
-import '../core/services/prro_service.dart';
-import 'vchasno_errors.dart';
-import 'fiscal_result.dart';
-import 'x_report_data.dart';
-import 'raw_printer_service.dart';
-import '../core/models/prro_info.dart';
+import 'package:cash_register/core/config/vchasno_config.dart';
+import 'package:cash_register/core/models/cashalot_models.dart';
+import 'package:cash_register/core/services/storage/storage_service.dart';
+import 'package:cash_register/core/services/prro/prro_service.dart';
+import 'package:cash_register/core/models/vchasno_errors.dart';
+import 'package:cash_register/core/models/fiscal_result.dart';
+import 'package:cash_register/core/models/x_report_data.dart';
+import 'package:cash_register/core/models/prro_info.dart';
+import 'package:cash_register/core/services/printing/raw_printer_service.dart';
 
 class VchasnoService implements PrroService {
   String? _lastCheckTag; // Для відстеження останнього чека

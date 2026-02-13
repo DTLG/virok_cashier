@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cash_register/core/widgets/notificarion_toast/view.dart';
-import '../services/app_initialization_service.dart';
-import '../routes/app_router.dart';
+import 'package:cash_register/core/services/sync/app_initialization_service.dart';
+import 'package:cash_register/core/routes/app_router.dart';
 
 /// Splash екран, який відповідає за початкову ініціалізацію додатку
 /// і маршрутизацію користувача на потрібну сторінку.

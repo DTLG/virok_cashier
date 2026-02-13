@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
-import '../models/cashalot_models.dart';
-import '../models/prro_info.dart';
-import '../models/pos_result.dart';
+import 'package:cash_register/core/models/cashalot_models.dart';
+import 'package:cash_register/core/models/prro_info.dart';
+import 'package:cash_register/core/models/pos_result.dart';
 import 'cashalot_service.dart';
 
 /// Mock реалізація CashalotService

@@ -1,7 +1,7 @@
 import 'package:get_it/get_it.dart';
-import '../services/cashalot_service.dart';
-import '../services/mock_cashalot_service.dart';
-import '../services/real_cashalot_service.dart';
+import 'package:cash_register/core/services/cashalot/core/cashalot_service.dart';
+import 'package:cash_register/core/services/cashalot/core/mock_cashalot_service.dart';
+import 'package:cash_register/core/services/cashalot/core/real_cashalot_service.dart';
 
 final GetIt _sl = GetIt.instance;
 

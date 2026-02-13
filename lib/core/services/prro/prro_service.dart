@@ -1,7 +1,7 @@
-import '../models/cashalot_models.dart';
-import '../../services/fiscal_result.dart';
-import '../../services/x_report_data.dart';
-import '../models/prro_info.dart';
+import 'package:cash_register/core/models/cashalot_models.dart';
+import 'package:cash_register/core/models/fiscal_result.dart';
+import 'package:cash_register/core/models/x_report_data.dart';
+import 'package:cash_register/core/models/prro_info.dart';
 
 /// Спільний інтерфейс для роботи з будь-яким ПРРО (Програмно-Реалізований Реєстратор Операцій)
 ///

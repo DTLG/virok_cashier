@@ -1,5 +1,5 @@
 import 'package:get_it/get_it.dart';
-import '../../core/services/data_sync_service.dart';
+import '../../core/services/sync/data_sync_service.dart';
 import '../../features/sync/data/datasources/sync_local_data_source.dart';
 import '../../features/sync/data/datasources/sync_remote_data_source.dart';
 import '../../features/sync/data/repositories/sync_repository_impl.dart';

@@ -1,0 +1,547 @@
+﻿// Created by Microsoft (R) C/C++ Compiler Version 14.44.35215.0 (2acbca31).
+//
+// D:\flutter_proj\cash_register\cash_register\build\windows\x64\runner\cash_register.dir\Debug\CashalotApi64.tlh
+//
+// C++ source equivalent of type library D:\\Cashalot\\CashalotApi64.dll
+// compiler-generated file - DO NOT EDIT!
+
+#pragma once
+#pragma pack(push, 8)
+
+#include <comdef.h>
+
+//
+// Forward references and typedefs
+//
+
+struct __declspec(uuid("269bc949-cc7f-4e43-bcf5-38a5c2aa00e6"))
+/* LIBID */ __CashaLotApi;
+struct __declspec(uuid("88f917b0-a8c5-4d3a-8721-5d3317e8a9eb"))
+/* dual interface */ ICashalotApiRetVal;
+struct /* coclass */ CashalotApiRetVal;
+struct /* coclass */ CashaLotApiAddin;
+struct __declspec(uuid("63c1fcf0-5b84-42a8-b0b5-f5770eef16de"))
+/* dual interface */ ICashaLotApiAddin;
+
+//
+// Smart pointer typedef declarations
+//
+
+_COM_SMARTPTR_TYPEDEF(ICashalotApiRetVal, __uuidof(ICashalotApiRetVal));
+_COM_SMARTPTR_TYPEDEF(ICashaLotApiAddin, __uuidof(ICashaLotApiAddin));
+
+//
+// Type library items
+//
+
+struct __declspec(uuid("88f917b0-a8c5-4d3a-8721-5d3317e8a9eb"))
+ICashalotApiRetVal : IDispatch
+{
+    //
+    // Property data
+    //
+
+    __declspec(property(get=GetReturn,put=PutReturn))
+    VARIANT_BOOL Return;
+    __declspec(property(get=GetDescription,put=PutDescription))
+    _bstr_t Description;
+    __declspec(property(get=GetShiftID,put=PutShiftID))
+    _bstr_t ShiftID;
+    __declspec(property(get=GetReceiptFiscalNum,put=PutReceiptFiscalNum))
+    _bstr_t ReceiptFiscalNum;
+    __declspec(property(get=GetReceiptLocalNum,put=PutReceiptLocalNum))
+    long ReceiptLocalNum;
+    __declspec(property(get=GetJsonVal,put=PutJsonVal))
+    _bstr_t JsonVal;
+    __declspec(property(get=GetXML,put=PutXML))
+    _bstr_t XML;
+    __declspec(property(get=GetType,put=PutType))
+    long Type;
+
+    //
+    // Wrapper methods for error-handling
+    //
+
+    VARIANT_BOOL GetReturn ( );
+    void PutReturn (
+        VARIANT_BOOL pField );
+    _bstr_t GetDescription ( );
+    void PutDescription (
+        _bstr_t pField );
+    _bstr_t GetShiftID ( );
+    void PutShiftID (
+        _bstr_t pField );
+    _bstr_t GetReceiptFiscalNum ( );
+    void PutReceiptFiscalNum (
+        _bstr_t pField );
+    long GetReceiptLocalNum ( );
+    void PutReceiptLocalNum (
+        long pField );
+    _bstr_t GetJsonVal ( );
+    void PutJsonVal (
+        _bstr_t pField );
+    HRESULT Clear (
+        VARIANT_BOOL bNoDestroy );
+    _bstr_t GetXML ( );
+    void PutXML (
+        _bstr_t pField );
+    long GetType ( );
+    void PutType (
+        long pField );
+
+    //
+    // Raw methods provided by interface
+    //
+
+      virtual HRESULT __stdcall get_Return (
+        /*[out,retval]*/ VARIANT_BOOL * pField ) = 0;
+      virtual HRESULT __stdcall put_Return (
+        /*[in]*/ VARIANT_BOOL pField ) = 0;
+      virtual HRESULT __stdcall get_Description (
+        /*[out,retval]*/ BSTR * pField ) = 0;
+      virtual HRESULT __stdcall put_Description (
+        /*[in]*/ BSTR pField ) = 0;
+      virtual HRESULT __stdcall get_ShiftID (
+        /*[out,retval]*/ BSTR * pField ) = 0;
+      virtual HRESULT __stdcall put_ShiftID (
+        /*[in]*/ BSTR pField ) = 0;
+      virtual HRESULT __stdcall get_ReceiptFiscalNum (
+        /*[out,retval]*/ BSTR * pField ) = 0;
+      virtual HRESULT __stdcall put_ReceiptFiscalNum (
+        /*[in]*/ BSTR pField ) = 0;
+      virtual HRESULT __stdcall get_ReceiptLocalNum (
+        /*[out,retval]*/ long * pField ) = 0;
+      virtual HRESULT __stdcall put_ReceiptLocalNum (
+        /*[in]*/ long pField ) = 0;
+      virtual HRESULT __stdcall get_JsonVal (
+        /*[out,retval]*/ BSTR * pField ) = 0;
+      virtual HRESULT __stdcall put_JsonVal (
+        /*[in]*/ BSTR pField ) = 0;
+      virtual HRESULT __stdcall raw_Clear (
+        /*[in]*/ VARIANT_BOOL bNoDestroy ) = 0;
+      virtual HRESULT __stdcall get_XML (
+        /*[out,retval]*/ BSTR * pField ) = 0;
+      virtual HRESULT __stdcall put_XML (
+        /*[in]*/ BSTR pField ) = 0;
+      virtual HRESULT __stdcall get_Type (
+        /*[out,retval]*/ long * pField ) = 0;
+      virtual HRESULT __stdcall put_Type (
+        /*[in]*/ long pField ) = 0;
+};
+
+struct __declspec(uuid("38ec0c94-cd69-4fc5-9ca6-4a7ada417a69"))
+CashalotApiRetVal;
+    // [ default ] interface ICashalotApiRetVal
+
+struct __declspec(uuid("c6fe5737-c213-430d-b4b5-922554a01c7c"))
+CashaLotApiAddin;
+    // [ default ] interface ICashaLotApiAddin
+
+struct __declspec(uuid("63c1fcf0-5b84-42a8-b0b5-f5770eef16de"))
+ICashaLotApiAddin : IDispatch
+{
+    //
+    // Wrapper methods for error-handling
+    //
+
+    _variant_t GetInterfaceRevision ( );
+    _bstr_t GetLastError ( );
+    _variant_t SetParameter (
+        _bstr_t Name,
+        _bstr_t Value );
+    _variant_t OpenShift (
+        _bstr_t FiscalNumberRRO );
+    _variant_t CloseShift (
+        _bstr_t FiscalNumberRRO );
+    _variant_t GetVersion ( );
+    _variant_t PrintTextDocument (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t DocumentPackage );
+    _variant_t PrintXReport (
+        _bstr_t FiscalNumberRRO );
+    _variant_t GetCurrentStatus (
+        _bstr_t FiscalNumberRRO );
+    _variant_t PrintZReport (
+        _bstr_t FiscalNumberRRO );
+    _bstr_t GetReceiptFiscalNumberByLocalNumber (
+        _bstr_t FiscalNumberRRO,
+        long ReceiptLocalNumber );
+    long GetReceiptLocalNumberByFiscalNumber (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t ReceiptFiscalNumber );
+    _bstr_t GetReceiptXML (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t ReceiptFiscalNumber );
+    _variant_t ShowReceipt (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t ReceiptFiscalNumber );
+    _variant_t FiscalizeCheck (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t strJSONData,
+        _bstr_t strJSONPayData );
+    _variant_t FiscalizeReturnCheck (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t strJSONData,
+        _bstr_t strJSONPayData,
+        _bstr_t strFiscalNumberReturnCheck );
+    _variant_t ServiceInput (
+        _bstr_t FiscalNumberRRO,
+        const _variant_t & Amount );
+    _variant_t ServiceOutput (
+        _bstr_t FiscalNumberRRO,
+        const _variant_t & Amount );
+    _variant_t ServiceInputEx (
+        _bstr_t FiscalNumberRRO,
+        const _variant_t & Amount );
+    _variant_t ServiceOutputEx (
+        _bstr_t FiscalNumberRRO,
+        const _variant_t & Amount );
+    _variant_t GetXReport (
+        _bstr_t FiscalNumberRRO,
+        VARIANT_BOOL ShowPrintReport );
+    _variant_t GetLastZReport (
+        _bstr_t FiscalNumberRRO,
+        VARIANT_BOOL ShowPrintReport );
+    _variant_t GetFirstReceiptByPeriod (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t dateBeg,
+        _bstr_t dateEnd );
+    _variant_t GetFirstReceiptByShift (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t ShiftID );
+    _variant_t GetNextReceipt (
+        _bstr_t FiscalNumberRRO );
+    _variant_t GetFirstZReportByPeriod (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t dateBeg,
+        _bstr_t dateEnd );
+    _variant_t GetZReportByShift (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t ShiftID );
+    _variant_t GetNextZReport (
+        _bstr_t FiscalNumberRRO );
+    _variant_t SetParameterEx (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t Name,
+        _bstr_t Value );
+    _variant_t PrintPReportDate (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t dtBeg,
+        _bstr_t dtEnd,
+        _bstr_t isShort );
+    _variant_t SetOfflineMode (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t AutoExitToOnline );
+    _variant_t TryGoToOnlineMode (
+        _bstr_t FiscalNumberRRO );
+    _variant_t SyncGoodsWithBalance (
+        _bstr_t FiscalNumberRRO );
+    _variant_t SyncBalanceOnGoods (
+        _bstr_t FiscalNumberRRO );
+    _variant_t StornoCheck (
+        _bstr_t FiscalNumberRRO );
+    _variant_t ShowReceiptQRCode (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t ReceiptFiscalNumber );
+    _variant_t SendCheckToCustomer (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t ReceiptFiscalNumber,
+        _bstr_t SendingAddressType,
+        _bstr_t SendingAddress );
+    _variant_t GetPOSTerminalList (
+        _bstr_t FiscalNumberRRO );
+    _variant_t SetDefaultPOSterminal (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t terminalID );
+    _variant_t PrintReportGoods (
+        _bstr_t FiscalNumberRRO );
+    _variant_t PayByPaymentCard (
+        _bstr_t FiscalNumberRRO,
+        const _variant_t & SumPayByCard,
+        _bstr_t OtherParam );
+    _variant_t ReturnPaymentByPaymentCard (
+        _bstr_t FiscalNumberRRO,
+        const _variant_t & SumPayByCard,
+        _bstr_t RRNCodeIn,
+        _bstr_t OtherParam );
+    _variant_t CancelPaymentByPaymentCard (
+        _bstr_t FiscalNumberRRO,
+        const _variant_t & SumPayByCard,
+        _bstr_t InvoiceNumber,
+        _bstr_t OtherParam );
+    _variant_t PayPartPaymentByPaymentCard (
+        _bstr_t FiscalNumberRRO,
+        const _variant_t & SumPayByCard,
+        _bstr_t CountParts,
+        _bstr_t OtherParam );
+    _variant_t ReturnPartPaymentByPaymentCard (
+        _bstr_t FiscalNumberRRO,
+        const _variant_t & SumPayByCard,
+        _bstr_t RRNCodeIn,
+        _bstr_t IsPartialReturn,
+        _bstr_t ServiceDogNum,
+        _bstr_t OtherParam );
+    _variant_t CreatePostponedReceipt (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t strJSONData,
+        _bstr_t strJSONPayData );
+    _variant_t FiscalizePostponedReceipt (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t ReceiptID,
+        _bstr_t OtherParam );
+    _variant_t GetFirstPostponedReceipt (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t StartDate,
+        _bstr_t EndDate );
+    _variant_t GetNextPostponedReceipt (
+        _bstr_t FiscalNumberRRO );
+    _variant_t GetPostponedReceiptByID (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t ReceiptID );
+    _variant_t GetPostponedReceiptByWaybillNumber (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t WaybillNumber );
+    _variant_t ShowReceiptByID (
+        _bstr_t FiscalNumberRRO,
+        _bstr_t ReceiptID );
+
+    //
+    // Raw methods provided by interface
+    //
+
+      virtual HRESULT __stdcall raw_GetInterfaceRevision (
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetLastError (
+        /*[out,retval]*/ BSTR * retVal ) = 0;
+      virtual HRESULT __stdcall raw_SetParameter (
+        /*[in]*/ BSTR Name,
+        /*[in]*/ BSTR Value,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_OpenShift (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_CloseShift (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetVersion (
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_PrintTextDocument (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR DocumentPackage,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_PrintXReport (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetCurrentStatus (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_PrintZReport (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetReceiptFiscalNumberByLocalNumber (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ long ReceiptLocalNumber,
+        /*[out,retval]*/ BSTR * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetReceiptLocalNumberByFiscalNumber (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR ReceiptFiscalNumber,
+        /*[out,retval]*/ long * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetReceiptXML (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR ReceiptFiscalNumber,
+        /*[out,retval]*/ BSTR * retVal ) = 0;
+      virtual HRESULT __stdcall raw_ShowReceipt (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR ReceiptFiscalNumber,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_FiscalizeCheck (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR strJSONData,
+        /*[in]*/ BSTR strJSONPayData,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_FiscalizeReturnCheck (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR strJSONData,
+        /*[in]*/ BSTR strJSONPayData,
+        /*[in]*/ BSTR strFiscalNumberReturnCheck,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_ServiceInput (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ VARIANT Amount,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_ServiceOutput (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ VARIANT Amount,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_ServiceInputEx (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ VARIANT Amount,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_ServiceOutputEx (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ VARIANT Amount,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetXReport (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ VARIANT_BOOL ShowPrintReport,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetLastZReport (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ VARIANT_BOOL ShowPrintReport,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetFirstReceiptByPeriod (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR dateBeg,
+        /*[in]*/ BSTR dateEnd,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetFirstReceiptByShift (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR ShiftID,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetNextReceipt (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetFirstZReportByPeriod (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR dateBeg,
+        /*[in]*/ BSTR dateEnd,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetZReportByShift (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR ShiftID,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetNextZReport (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_SetParameterEx (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR Name,
+        /*[in]*/ BSTR Value,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_PrintPReportDate (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR dtBeg,
+        /*[in]*/ BSTR dtEnd,
+        /*[in]*/ BSTR isShort,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_SetOfflineMode (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR AutoExitToOnline,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_TryGoToOnlineMode (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_SyncGoodsWithBalance (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_SyncBalanceOnGoods (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_StornoCheck (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_ShowReceiptQRCode (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR ReceiptFiscalNumber,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_SendCheckToCustomer (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR ReceiptFiscalNumber,
+        /*[in]*/ BSTR SendingAddressType,
+        /*[in]*/ BSTR SendingAddress,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetPOSTerminalList (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_SetDefaultPOSterminal (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR terminalID,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_PrintReportGoods (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_PayByPaymentCard (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ VARIANT SumPayByCard,
+        /*[in]*/ BSTR OtherParam,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_ReturnPaymentByPaymentCard (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ VARIANT SumPayByCard,
+        /*[in]*/ BSTR RRNCodeIn,
+        /*[in]*/ BSTR OtherParam,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_CancelPaymentByPaymentCard (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ VARIANT SumPayByCard,
+        /*[in]*/ BSTR InvoiceNumber,
+        /*[in]*/ BSTR OtherParam,
+        /*[out,retval]*/ VARIANT * pRetVal ) = 0;
+      virtual HRESULT __stdcall raw_PayPartPaymentByPaymentCard (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ VARIANT SumPayByCard,
+        /*[in]*/ BSTR CountParts,
+        /*[in]*/ BSTR OtherParam,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_ReturnPartPaymentByPaymentCard (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ VARIANT SumPayByCard,
+        /*[in]*/ BSTR RRNCodeIn,
+        /*[in]*/ BSTR IsPartialReturn,
+        /*[in]*/ BSTR ServiceDogNum,
+        /*[in]*/ BSTR OtherParam,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_CreatePostponedReceipt (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR strJSONData,
+        /*[in]*/ BSTR strJSONPayData,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_FiscalizePostponedReceipt (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR ReceiptID,
+        /*[in]*/ BSTR OtherParam,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetFirstPostponedReceipt (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR StartDate,
+        /*[in]*/ BSTR EndDate,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetNextPostponedReceipt (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetPostponedReceiptByID (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR ReceiptID,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_GetPostponedReceiptByWaybillNumber (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR WaybillNumber,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+      virtual HRESULT __stdcall raw_ShowReceiptByID (
+        /*[in]*/ BSTR FiscalNumberRRO,
+        /*[in]*/ BSTR ReceiptID,
+        /*[out,retval]*/ VARIANT * retVal ) = 0;
+};
+
+//
+// Named GUID constants initializations
+//
+
+extern "C" const GUID __declspec(selectany) LIBID_CashaLotApi =
+    {0x269bc949,0xcc7f,0x4e43,{0xbc,0xf5,0x38,0xa5,0xc2,0xaa,0x00,0xe6}};
+extern "C" const GUID __declspec(selectany) IID_ICashalotApiRetVal =
+    {0x88f917b0,0xa8c5,0x4d3a,{0x87,0x21,0x5d,0x33,0x17,0xe8,0xa9,0xeb}};
+extern "C" const GUID __declspec(selectany) CLSID_CashalotApiRetVal =
+    {0x38ec0c94,0xcd69,0x4fc5,{0x9c,0xa6,0x4a,0x7a,0xda,0x41,0x7a,0x69}};
+extern "C" const GUID __declspec(selectany) CLSID_CashaLotApiAddin =
+    {0xc6fe5737,0xc213,0x430d,{0xb4,0xb5,0x92,0x25,0x54,0xa0,0x1c,0x7c}};
+extern "C" const GUID __declspec(selectany) IID_ICashaLotApiAddin =
+    {0x63c1fcf0,0x5b84,0x42a8,{0xb0,0xb5,0xf5,0x77,0x0e,0xef,0x16,0xde}};
+
+//
+// Wrapper method implementations
+//
+
+#include "cashalotapi64.tli"
+
+#pragma pack(pop)

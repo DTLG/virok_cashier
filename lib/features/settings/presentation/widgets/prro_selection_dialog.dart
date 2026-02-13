@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/models/prro_info.dart';
-// import '../../../../core/services/cashalot_service.dart';
-import '../../../../core/services/storage_service.dart';
+// import '../../../../core/services/cashalot/cashalot_service.dart';
+import '../../../../core/services/storage/storage_service.dart';
 import '../../../../core/widgets/notificarion_toast/view.dart';
 import '../../../../features/home/presentation/bloc/home_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

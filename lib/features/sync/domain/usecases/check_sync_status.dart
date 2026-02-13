@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../repositories/sync_repository.dart';
-import '../../../../core/services/data_sync_service.dart';
+import '../../../../core/services/sync/data_sync_service.dart';
 
 class CheckSyncStatus {
   final SyncRepository _repository;

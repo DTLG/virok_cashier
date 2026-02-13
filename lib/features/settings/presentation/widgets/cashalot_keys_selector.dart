@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../../../core/services/storage_service.dart';
+import '../../../../core/services/storage/storage_service.dart';
 import '../../../../core/widgets/notificarion_toast/view.dart';
 
 /// Віджет для вибору файлів ключів Cashalot через системний провідник
@@ -14,6 +14,7 @@ class CashalotKeysSelector extends StatefulWidget {
 
 class _CashalotKeysSelectorState extends State<CashalotKeysSelector> {
   final StorageService _storageService = StorageService();
+  String? _cashalotFolderPath;
   String? _keyPath;
   String? _certPath;
   String? _keyPassword;
@@ -30,16 +31,51 @@ class _CashalotKeysSelectorState extends State<CashalotKeysSelector> {
       _isLoading = true;
     });
 
+    final cashalotFolderPath = await _storageService.getCashalotFolderPath();
     final keyPath = await _storageService.getCashalotKeyPath();
     final certPath = await _storageService.getCashalotCertPath();
     final password = await _storageService.getCashalotKeyPassword();
 
     setState(() {
+      _cashalotFolderPath = cashalotFolderPath;
       _keyPath = keyPath;
       _certPath = certPath;
       _keyPassword = password;
       _isLoading = false;
     });
+  }
+
+  Future<void> _pickCashalotFolder() async {
+    try {
+      final result = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: 'Виберіть папку Cashalot',
+      );
+
+      if (result != null) {
+        await _storageService.setCashalotFolderPath(result);
+        setState(() {
+          _cashalotFolderPath = result;
+        });
+        if (mounted) {
+          ToastManager.show(
+            context,
+            type: ToastType.success,
+            title: 'Папку вибрано',
+            message: 'Перезапустіть додаток для застосування змін',
+            duration: const Duration(seconds: 4),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ToastManager.show(
+          context,
+          type: ToastType.error,
+          title: 'Помилка',
+          message: 'Не вдалося вибрати папку: $e',
+        );
+      }
+    }
   }
 
   Future<void> _pickKeyFile() async {
@@ -196,6 +232,13 @@ class _CashalotKeysSelectorState extends State<CashalotKeysSelector> {
           ),
         ),
         const SizedBox(height: 16),
+        _buildFolderSelector(
+          label: 'Шлях до Cashalot',
+          path: _cashalotFolderPath,
+          onTap: _pickCashalotFolder,
+          icon: Icons.folder_outlined,
+        ),
+        const SizedBox(height: 16),
         _buildFileSelector(
           label: 'Приватний ключ',
           path: _keyPath,
@@ -212,13 +255,15 @@ class _CashalotKeysSelectorState extends State<CashalotKeysSelector> {
         const SizedBox(height: 12),
         _buildPasswordSelector(),
         const SizedBox(height: 16),
-        if (_keyPath != null || _certPath != null)
+        if (_cashalotFolderPath != null || _keyPath != null || _certPath != null)
           TextButton(
             onPressed: () async {
+              await _storageService.setCashalotFolderPath(null);
               await _storageService.setCashalotKeyPath(null);
               await _storageService.setCashalotCertPath(null);
               await _storageService.setCashalotKeyPassword(null);
               setState(() {
+                _cashalotFolderPath = null;
                 _keyPath = null;
                 _certPath = null;
                 _keyPassword = null;
@@ -279,6 +324,66 @@ class _CashalotKeysSelectorState extends State<CashalotKeysSelector> {
                   if (path != null)
                     Text(
                       _getFileName(path),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  else
+                    const Text(
+                      'Не вибрано',
+                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.white70),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFolderSelector({
+    required String label,
+    required String? path,
+    required VoidCallback onTap,
+    required IconData icon,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A2A2A),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: path != null ? Colors.green : Colors.white30,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: path != null ? Colors.green : Colors.white70),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: path != null ? Colors.white : Colors.white70,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (path != null)
+                    Text(
+                      path,
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 12,

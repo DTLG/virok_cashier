@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../services/vchasno_errors.dart';
+import '../../../../core/models/vchasno_errors.dart';
 import '../../../../core/widgets/notificarion_toast/toast_manager.dart';
 import '../../../../core/widgets/notificarion_toast/toast_type.dart';
 

@@ -7,7 +7,7 @@ import '../../data/datasources/auth_remote_data_source.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../../../core/routes/app_router.dart';
-import '../../../../core/services/storage_service.dart';
+import '../../../../core/services/storage/storage_service.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});

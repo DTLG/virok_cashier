@@ -179,3 +179,38 @@ final class CleanupCashalotEvent extends HomeEvent {
   @override
   List<Object> get props => [prroFiscalNum ?? 0];
 }
+
+/// Подія для оновлення стану після закриття зміни (без фіскальних операцій)
+/// Використовується коли зміна закрита через prroService напряму
+final class ShiftClosedEvent extends HomeEvent {
+  const ShiftClosedEvent();
+
+  @override
+  List<Object> get props => [];
+}
+
+/// Повернення чека
+final class ReturnCheckEvent extends HomeEvent {
+  final CheckPayload checkPayload;
+  final double totalSum;
+  final String originalFiscalNumber; // Фіскальний номер оригінального чека продажу
+  final bool isCardReturn;
+  final String? originalRrn; // RRN оригінальної транзакції (для картки)
+
+  const ReturnCheckEvent({
+    required this.checkPayload,
+    required this.totalSum,
+    required this.originalFiscalNumber,
+    this.isCardReturn = false,
+    this.originalRrn,
+  });
+
+  @override
+  List<Object> get props => [
+        checkPayload,
+        totalSum,
+        originalFiscalNumber,
+        isCardReturn,
+        originalRrn ?? '',
+      ];
+}

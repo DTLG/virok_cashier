@@ -8,7 +8,7 @@ import '../../features/home/domain/usecases/get_last_opened_shift.dart';
 import '../../features/home/domain/usecases/open_today_shift.dart';
 import '../../features/home/domain/usecases/close_previous_shift.dart';
 import '../../features/home/domain/usecases/checkout.dart';
-import '../services/storage_service.dart';
+import 'package:cash_register/core/services/storage/storage_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final GetIt _sl = GetIt.instance;

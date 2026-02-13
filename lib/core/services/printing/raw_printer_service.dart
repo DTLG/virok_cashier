@@ -4,8 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:enough_convert/enough_convert.dart';
 import 'package:get_it/get_it.dart';
-import '../../core/services/storage_service.dart'; // Переконайтеся, що шлях правильний
-import '../../core/config/vchasno_config.dart'; // Для дефолтних значень, якщо є
+import 'package:cash_register/core/services/storage/storage_service.dart';
+import 'package:cash_register/core/config/vchasno_config.dart';
 
 class RawPrinterService {
   final StorageService _storageService;

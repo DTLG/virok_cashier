@@ -3,27 +3,26 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import '../../features/nomenclatura/data/datasources/nomenclatura_remote_data_source.dart';
-import '../../features/nomenclatura/data/datasources/nomenclatura_local_data_source.dart';
-import '../../features/nomenclatura/data/repositories/nomenclatura_repository_impl.dart';
-import '../../features/nomenclatura/domain/repositories/nomenclatura_repository.dart';
-import '../../features/nomenclatura/domain/usecases/get_all_nomenclatura.dart';
-import '../../features/nomenclatura/domain/usecases/search_nomenclatura.dart';
-import '../../features/nomenclatura/domain/usecases/sync_nomenclatura.dart';
-import '../../features/nomenclatura/domain/usecases/get_categories.dart';
-import '../../features/nomenclatura/domain/usecases/get_subcategories.dart';
+import 'package:cash_register/features/nomenclatura/data/datasources/nomenclatura_remote_data_source.dart';
+import 'package:cash_register/features/nomenclatura/data/datasources/nomenclatura_local_data_source.dart';
+import 'package:cash_register/features/nomenclatura/data/repositories/nomenclatura_repository_impl.dart';
+import 'package:cash_register/features/nomenclatura/domain/repositories/nomenclatura_repository.dart';
+import 'package:cash_register/features/nomenclatura/domain/usecases/get_all_nomenclatura.dart';
+import 'package:cash_register/features/nomenclatura/domain/usecases/search_nomenclatura.dart';
+import 'package:cash_register/features/nomenclatura/domain/usecases/sync_nomenclatura.dart';
+import 'package:cash_register/features/nomenclatura/domain/usecases/get_categories.dart';
+import 'package:cash_register/features/nomenclatura/domain/usecases/get_subcategories.dart';
 import 'data_sync_service.dart';
-import 'storage_service.dart';
+import 'package:cash_register/core/services/storage/storage_service.dart';
 // import 'realtime_service.dart';
-import '../widgets/sync_dialog.dart';
-import '../../features/settings/presentation/bloc/settings_bloc.dart';
-import '../di/sync_injection.dart';
-import '../di/home_injection.dart';
-import '../di/prro_injection.dart';
-import '../config/cashalot_config.dart';
-import '../../features/home/presentation/bloc/home_bloc.dart';
-import 'prro_service.dart';
-import 'cashalot_com_service.dart';
+import 'package:cash_register/core/widgets/sync_dialog.dart';
+import 'package:cash_register/features/settings/presentation/bloc/settings_bloc.dart';
+import 'package:cash_register/core/di/sync_injection.dart';
+import 'package:cash_register/core/di/home_injection.dart';
+import 'package:cash_register/core/di/prro_injection.dart';
+import 'package:cash_register/core/config/cashalot_config.dart';
+import 'package:cash_register/features/home/presentation/bloc/home_bloc.dart';
+import 'package:cash_register/core/services/cashalot/com/cashalot_com_service.dart';
 import 'dart:io';
 
 class AppInitializationService {
@@ -103,10 +102,7 @@ class AppInitializationService {
       // HomeBloc (Реєструємо фабрику, щоб GetIt сам підставив сервіси)
       // HomeBloc (Реєструємо фабрику, щоб GetIt сам підставив сервіси)
       _sl.registerFactory(
-        () => HomeBloc(
-          storageService: _sl<StorageService>(),
-          prroService: _sl<PrroService>(),
-        ),
+        () => HomeBloc(storageService: _sl<StorageService>()),
       );
       // Реєстрація Sync залежностей
       setupSyncInjection();
@@ -141,9 +137,14 @@ class AppInitializationService {
 
       // Реєстрація PrroService (універсальний інтерфейс для ПРРО)
       // ТУТ обираємо реалізацію через Cashalot COM
+      final prroFiscalNum = int.tryParse(CashalotConfig.defaultPrroFiscalNum);
+      debugPrint(
+        '📋 [INIT] CashalotConfig.defaultPrroFiscalNum="${CashalotConfig.defaultPrroFiscalNum}", parsed=$prroFiscalNum',
+      );
+
       setupPrroInjection(
         serviceType: PrroServiceType.cashalotCom,
-        defaultPrroFiscalNum: int.tryParse(CashalotConfig.defaultPrroFiscalNum),
+        defaultPrroFiscalNum: prroFiscalNum,
       );
 
       _isInitialized = true;
@@ -244,8 +245,13 @@ class AppInitializationService {
     // Фіскальний номер з конфігурації
     const fiscalNumber = CashalotConfig.defaultPrroFiscalNum;
 
-    const cashalotPath = r'D:\Cashalot';
     final storageService = _sl<StorageService>();
+
+    // Шлях до Cashalot з налаштувань або значення за замовчуванням
+    final cashalotPathFromSettings = await storageService
+        .getCashalotFolderPath();
+    final cashalotPath = cashalotPathFromSettings ?? r'D:\Cashalot';
+
     final keyPathFromFile = await storageService
         .getCashalotKeyPath(); // Тут повний шлях до файлу
     final password = await storageService.getCashalotKeyPassword();
@@ -263,6 +269,7 @@ class AppInitializationService {
       }
     }
 
+    debugPrint('🔑 Шлях до Cashalot: $cashalotPath');
     debugPrint('🔑 Шлях до ключів (DIR): $directoryPath');
 
     await comService.initialize(
