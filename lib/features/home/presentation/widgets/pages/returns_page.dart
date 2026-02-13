@@ -450,35 +450,27 @@ class _ReturnsPageState extends State<ReturnsPage> {
               children: [
                 Expanded(
                   child: _buildTextField(
+                    isLoading: isLoading,
                     controller: _fiscalNumberController,
                     label: 'Фіскальний номер оригінального чека *',
                     hint: 'Введіть фіскальний номер',
                     enabled: !isLoading,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () {
-                          final value = _fiscalNumberController.text.trim();
-                          if (value.isEmpty) {
-                            ToastManager.show(
-                              context,
-                              type: ToastType.warning,
-                              title: 'Введіть фіскальний номер',
-                            );
-                            return;
-                          }
-                          context.read<HomeBloc>().add(
+                    trailingButtonLabel: 'Знайти чек',
+                    trailingButtonOnPressed: () {
+                      final value = _fiscalNumberController.text.trim();
+                      if (value.isEmpty) {
+                        ToastManager.show(
+                          context,
+                          type: ToastType.warning,
+                          title: 'Введіть фіскальний номер',
+                        );
+                        return;
+                      }
+                      context.read<HomeBloc>().add(
                             GetKkmCheckEvent(fiscalNumber: value),
                           );
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey,
-                    foregroundColor: Colors.white,
+                    },
                   ),
-                  child: const Text('Знайти чек'),
                 ),
               ],
             ),
@@ -754,9 +746,14 @@ class _ReturnsPageState extends State<ReturnsPage> {
     required TextEditingController controller,
     required String label,
     required String hint,
+    bool isLoading = false,
     TextInputType keyboardType = TextInputType.text,
     bool enabled = true,
+    VoidCallback? trailingButtonOnPressed,
+    String? trailingButtonLabel,
   }) {
+    final hasButton = trailingButtonLabel != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -765,33 +762,49 @@ class _ReturnsPageState extends State<ReturnsPage> {
           style: const TextStyle(color: Colors.white70, fontSize: 14),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          enabled: enabled,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(color: Colors.white38),
-            filled: true,
-            fillColor: const Color(0xFF3A3A3A),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                keyboardType: keyboardType,
+                enabled: enabled,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: const TextStyle(color: Colors.white38),
+                  filled: true,
+                  fillColor: const Color(0xFF3A3A3A),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Colors.white24),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Colors.red),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+              ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.white24),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.red),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-          ),
+            if (hasButton) const SizedBox(width: 12),
+            if (hasButton)
+              ElevatedButton(
+                onPressed: isLoading || !enabled ? null : trailingButtonOnPressed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueGrey,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(trailingButtonLabel!),
+              ),
+          ],
         ),
       ],
     );
