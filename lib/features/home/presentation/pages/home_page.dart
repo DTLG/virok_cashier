@@ -195,6 +195,9 @@ class _HomePageState extends State<HomePage> {
         // Перехідний стан, показуємо loading
         return const HomeLoadingWidget();
 
+      case HomeStatus.kkmSearchSuccess:
+        return _buildLoggedInContent(context, state);
+
       case HomeStatus.cleanupCashalot:
         return const HomeLoadingWidget();
 

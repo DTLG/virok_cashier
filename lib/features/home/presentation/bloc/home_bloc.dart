@@ -61,6 +61,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
     on<CleanupCashalotEvent>(_onCleanupCashalot);
     on<ReturnCheckEvent>(_onReturnCheck);
     on<ShiftClosedEvent>(_onShiftClosed);
+    on<GetKkmCheckEvent>(_onGetKkmCheck);
   }
 
   /// Публічний метод для тестового депозиту (для використання з інших модулів)
@@ -989,8 +990,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
           state.copyWith(
             status: HomeStatus.loggedIn,
             xReportData: reportData,
-            openedShiftAt:
-                wasShiftClosed ? DateTime.now() : state.openedShiftAt,
+            openedShiftAt: wasShiftClosed
+                ? DateTime.now()
+                : state.openedShiftAt,
           ),
         );
       } else {
@@ -998,7 +1000,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
         emit(state.copyWith(status: HomeStatus.error));
       }
 
-      debugPrint('✅ [SERVICE_DEPOSIT] Службове внесення успішно виконано (стан оновлено)');
+      debugPrint(
+        '✅ [SERVICE_DEPOSIT] Службове внесення успішно виконано (стан оновлено)',
+      );
     } catch (e) {
       debugPrint('❌ [SERVICE_DEPOSIT] Помилка: $e');
       emit(
@@ -1235,6 +1239,76 @@ class HomeBloc extends Bloc<HomeEvent, HomeViewState> {
           status: HomeStatus.returnError,
           errorMessage:
               'Помилка повернення: ${e.toString().replaceAll('Exception:', '').trim()}',
+        ),
+      );
+    }
+  }
+
+  /// Пошук чека в Supabase за фіскальним номером (document_number)
+  Future<void> _onGetKkmCheck(
+    GetKkmCheckEvent event,
+    Emitter<HomeViewState> emit,
+  ) async {
+    try {
+      debugPrint(
+        '🔍 [KKM_CHECK] Пошук чека за фіскальним номером ${event.fiscalNumber}...',
+      );
+      // Очищаємо попередні результати та переходимо у loading
+      emit(
+        state.copyWith(
+          status: HomeStatus.loading,
+          kkmItems: [],
+          kkmPaymentForm: null,
+          kkmRrn: null,
+          kkmAmount: null,
+        ),
+      );
+
+      final row = await checkRemoteDataSource.getCheckByFiscalNumber(
+        event.fiscalNumber.trim(),
+      );
+
+      if (row == null) {
+        debugPrint('❌ [KKM_CHECK] Чек не знайдено');
+        emit(
+          state.copyWith(
+            status: HomeStatus.error,
+            errorMessage: 'Чек з таким фіскальним номером не знайдено',
+            clearKkmCheck: true,
+          ),
+        );
+        return;
+      }
+
+      final paymentForm = row['payment_form'] as String?;
+      final rrn = row['RRN'] as String?;
+      final amount = (row['amount'] as num?)?.toDouble();
+      final checkId = row['id'] as int;
+      final fiscalNumber = row['document_number'] as String?;
+      // Товари чека
+      final items = await checkRemoteDataSource.getCheckItems(checkId);
+
+      debugPrint(
+        '✅ [KKM_CHECK] Знайдено чек: payment_form=$paymentForm, amount=$amount, RRN=$rrn',
+      );
+
+      emit(
+        state.copyWith(
+          status: HomeStatus.kkmSearchSuccess,
+          kkmPaymentForm: paymentForm,
+          kkmRrn: rrn,
+          kkmAmount: amount,
+          kkmItems: items,
+          kkmFiscalNumber: fiscalNumber,
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ [KKM_CHECK] Помилка: $e');
+      emit(
+        state.copyWith(
+          status: HomeStatus.error,
+          errorMessage: e.toString(),
+          clearKkmCheck: true,
         ),
       );
     }

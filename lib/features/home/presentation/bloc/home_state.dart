@@ -14,6 +14,7 @@ enum HomeStatus {
   returnLoading,
   returnSuccess,
   returnError,
+  kkmSearchSuccess,
 }
 
 class HomeViewState extends Equatable {
@@ -32,6 +33,12 @@ class HomeViewState extends Equatable {
   final XReportData? xReportData; // Дані X-звіту для показу діалогу
   final List<PrroInfo>? prroInfo;
   final FiscalResult? returnResult; // Результат повернення
+  // Дані знайденого чека в Supabase (для сторінки повернення)
+  final String? kkmPaymentForm; // 'Готівка' / 'Картка'
+  final String? kkmRrn;
+  final String? kkmFiscalNumber;
+  final double? kkmAmount;
+  final List<Map<String, dynamic>> kkmItems;
 
   const HomeViewState({
     this.status = HomeStatus.initial,
@@ -49,6 +56,11 @@ class HomeViewState extends Equatable {
     this.xReportData,
     this.prroInfo,
     this.returnResult,
+    this.kkmPaymentForm,
+    this.kkmRrn,
+    this.kkmAmount,
+    this.kkmFiscalNumber,
+    this.kkmItems = const [],
   });
 
   HomeViewState copyWith({
@@ -67,12 +79,18 @@ class HomeViewState extends Equatable {
     XReportData? xReportData,
     List<PrroInfo>? prroInfo,
     FiscalResult? returnResult,
+    String? kkmPaymentForm,
+    String? kkmRrn,
+    double? kkmAmount,
+    String? kkmFiscalNumber,
+    List<Map<String, dynamic>>? kkmItems,
     // Спеціальні прапорці для явного встановлення null
     bool clearOpenedShiftAt = false,
     bool clearXReportData = false,
     bool clearFiscalResult = false,
     bool clearVchasnoError = false,
     bool clearReturnResult = false,
+    bool clearKkmCheck = false,
   }) {
     return HomeViewState(
       status: status ?? this.status,
@@ -98,6 +116,15 @@ class HomeViewState extends Equatable {
       returnResult: clearReturnResult
           ? null
           : (returnResult ?? this.returnResult),
+      kkmPaymentForm: clearKkmCheck
+          ? null
+          : (kkmPaymentForm ?? this.kkmPaymentForm),
+      kkmRrn: clearKkmCheck ? null : (kkmRrn ?? this.kkmRrn),
+      kkmAmount: clearKkmCheck ? null : (kkmAmount ?? this.kkmAmount),
+      kkmFiscalNumber: clearKkmCheck
+          ? null
+          : (kkmFiscalNumber ?? this.kkmFiscalNumber),
+      kkmItems: clearKkmCheck ? [] : (kkmItems ?? this.kkmItems),
     );
   }
 
@@ -118,6 +145,11 @@ class HomeViewState extends Equatable {
     xReportData,
     prroInfo,
     returnResult,
+    kkmPaymentForm,
+    kkmRrn,
+    kkmAmount,
+    kkmItems,
+    kkmFiscalNumber,
   ];
 }
 

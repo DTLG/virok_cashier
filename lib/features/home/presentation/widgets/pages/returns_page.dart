@@ -30,7 +30,7 @@ class _ReturnsPageState extends State<ReturnsPage> {
   bool _isSearching = false;
   bool _showSearchResults = false;
   List<Nomenclatura> _searchResults = [];
-  final List<ReturnItem> _returnItems = [];
+  List<ReturnItem> _returnItems = [];
 
   @override
   void dispose() {
@@ -248,42 +248,161 @@ class _ReturnsPageState extends State<ReturnsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<HomeBloc, HomeViewState>(
-      listenWhen: (prev, curr) =>
-          prev.status != curr.status &&
-          (curr.status == HomeStatus.returnSuccess ||
-              curr.status == HomeStatus.returnError ||
-              curr.status == HomeStatus.returnLoading),
-      listener: (context, state) {
-        if (state.status == HomeStatus.returnSuccess) {
-          ToastManager.show(
-            context,
-            type: ToastType.success,
-            title: 'Повернення успішне',
-            message: 'Чек повернення фіскалізовано',
-            duration: const Duration(seconds: 4),
-          );
-          // Очищаємо форму
-          setState(() {
-            _returnItems.clear();
-            _fiscalNumberController.clear();
-            _rrnController.clear();
-            _isCardReturn = false;
-          });
-          // Повертаємо статус
-          context.read<HomeBloc>().add(const CheckUserLoginStatus());
-        } else if (state.status == HomeStatus.returnError) {
-          ToastManager.show(
-            context,
-            type: ToastType.error,
-            title: 'Помилка повернення',
-            message: state.errorMessage,
-          );
-          context.read<HomeBloc>().add(const CheckUserLoginStatus());
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<HomeBloc, HomeViewState>(
+          listenWhen: (prev, curr) =>
+              prev.status != curr.status &&
+              (curr.status == HomeStatus.returnSuccess ||
+                  curr.status == HomeStatus.returnError ||
+                  curr.status == HomeStatus.returnLoading),
+          listener: (context, state) {
+            if (state.status == HomeStatus.returnSuccess) {
+              ToastManager.show(
+                context,
+                type: ToastType.success,
+                title: 'Повернення успішне',
+                message: 'Чек повернення фіскалізовано',
+                duration: const Duration(seconds: 4),
+              );
+              // Очищаємо форму
+              setState(() {
+                _returnItems.clear();
+                _fiscalNumberController.clear();
+                _rrnController.clear();
+                _isCardReturn = false;
+              });
+              // Повертаємо статус
+              context.read<HomeBloc>().add(const CheckUserLoginStatus());
+            } else if (state.status == HomeStatus.returnError) {
+              ToastManager.show(
+                context,
+                type: ToastType.error,
+                title: 'Помилка повернення',
+                message: state.errorMessage,
+              );
+              context.read<HomeBloc>().add(const CheckUserLoginStatus());
+            }
+          },
+        ),
+        BlocListener<HomeBloc, HomeViewState>(
+          listenWhen: (prev, curr) {
+            final shouldListen =
+                prev.status != curr.status &&
+                curr.status == HomeStatus.kkmSearchSuccess;
+
+            debugPrint(
+              '🔎 [RETURNS_LISTENER] listenWhen: prev.status=${prev.status}, '
+              'curr.status=${curr.status}, shouldListen=$shouldListen',
+            );
+
+            return shouldListen;
+          },
+          listener: (context, state) {
+            final paymentForm = state.kkmPaymentForm;
+            final items = state.kkmItems;
+
+            debugPrint(
+              '🔁 [RETURNS_LISTENER] status=${state.status}, '
+              'kkmItems=${items.length}, '
+              'paymentForm=$paymentForm, '
+              'RRN=${state.kkmRrn}',
+            );
+
+            if (paymentForm == null && items.isEmpty) {
+              debugPrint(
+                '🔁 [RETURNS_LISTENER] Пропуск: немає paymentForm і items.isEmpty',
+              );
+              return;
+            }
+
+            setState(() {
+              // Тип оплати + RRN
+              if (paymentForm != null) {
+                final isCard = paymentForm.toLowerCase().contains('карт');
+                _isCardReturn = isCard;
+                if (isCard && state.kkmRrn != null) {
+                  _rrnController.text = state.kkmRrn!;
+                }
+              }
+
+              // Заповнюємо товари з kkm_check_items
+              if (items.isNotEmpty) {
+                debugPrint(
+                  '🔁 [RETURNS_LISTENER] Заповнення _returnItems з ${items.length} позицій',
+                );
+                _returnItems
+                  ..clear()
+                  ..addAll(
+                    items.map((row) {
+                      final name = (row['product_name'] as String?) ?? '';
+                      final code = (row['product_code'] as String?) ?? '';
+                      final qty = (row['quantity'] as num?)?.toInt() ?? 1;
+                      final price = (row['price'] as num?)?.toDouble() ?? 0.0;
+
+                      debugPrint(
+                        '   ▶ item name="$name", code="$code", qty=$qty, price=$price',
+                      );
+
+                      return ReturnItem(
+                        name: name,
+                        code: code,
+                        quantity: qty,
+                        price: price,
+                      );
+                    }),
+                  );
+                debugPrint(
+                  '🔁 [RETURNS_LISTENER] Після заповнення _returnItems.length=${_returnItems.length}',
+                );
+              } else {
+                debugPrint(
+                  '🔁 [RETURNS_LISTENER] items.isEmpty, _returnItems не змінюємо',
+                );
+              }
+            });
+
+            ToastManager.show(
+              context,
+              type: ToastType.info,
+              title: 'Дані чека завантажено',
+              message: paymentForm == null
+                  ? 'Товари чека додано'
+                  : (paymentForm.toLowerCase().contains('карт')
+                        ? 'Тип оплати: Картка, товари чека додано'
+                        : 'Тип оплати: Готівка, товари чека додано'),
+            );
+
+            // Опційно: повертаємо статус у "звичайний" режим логіну
+            context.read<HomeBloc>().add(const CheckUserLoginStatus());
+          },
+        ),
+      ],
       child: BlocBuilder<HomeBloc, HomeViewState>(
         builder: (context, state) {
+          if (state.status == HomeStatus.kkmSearchSuccess) {
+            _returnItems = state.kkmItems
+                .map(
+                  (item) => ReturnItem(
+                    name: item['product_name'] as String,
+                    code: item['product_code'] as String,
+                    quantity: item['quantity'] as int,
+                    price: item['price'] as double,
+                  ),
+                )
+                .toList();
+            if (state.kkmPaymentForm != null) {
+              _isCardReturn = state.kkmPaymentForm!.toLowerCase().contains(
+                'карт',
+              );
+            }
+            if (state.kkmFiscalNumber != null) {
+              _fiscalNumberController.text = state.kkmFiscalNumber!;
+            }
+            if (state.kkmRrn != null) {
+              _rrnController.text = state.kkmRrn!;
+            }
+          }
           final isLoading = state.status == HomeStatus.returnLoading;
 
           return Padding(
@@ -327,11 +446,41 @@ class _ReturnsPageState extends State<ReturnsPage> {
             const SizedBox(height: 24),
 
             // Фіскальний номер оригінального чека
-            _buildTextField(
-              controller: _fiscalNumberController,
-              label: 'Фіскальний номер оригінального чека *',
-              hint: 'Введіть фіскальний номер',
-              enabled: !isLoading,
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    controller: _fiscalNumberController,
+                    label: 'Фіскальний номер оригінального чека *',
+                    hint: 'Введіть фіскальний номер',
+                    enabled: !isLoading,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          final value = _fiscalNumberController.text.trim();
+                          if (value.isEmpty) {
+                            ToastManager.show(
+                              context,
+                              type: ToastType.warning,
+                              title: 'Введіть фіскальний номер',
+                            );
+                            return;
+                          }
+                          context.read<HomeBloc>().add(
+                            GetKkmCheckEvent(fiscalNumber: value),
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Знайти чек'),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 

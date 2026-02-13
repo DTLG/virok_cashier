@@ -193,7 +193,8 @@ final class ShiftClosedEvent extends HomeEvent {
 final class ReturnCheckEvent extends HomeEvent {
   final CheckPayload checkPayload;
   final double totalSum;
-  final String originalFiscalNumber; // Фіскальний номер оригінального чека продажу
+  final String
+  originalFiscalNumber; // Фіскальний номер оригінального чека продажу
   final bool isCardReturn;
   final String? originalRrn; // RRN оригінальної транзакції (для картки)
 
@@ -207,10 +208,19 @@ final class ReturnCheckEvent extends HomeEvent {
 
   @override
   List<Object> get props => [
-        checkPayload,
-        totalSum,
-        originalFiscalNumber,
-        isCardReturn,
-        originalRrn ?? '',
-      ];
+    checkPayload,
+    totalSum,
+    originalFiscalNumber,
+    isCardReturn,
+    originalRrn ?? '',
+  ];
+}
+
+class GetKkmCheckEvent extends HomeEvent {
+  final String fiscalNumber;
+
+  const GetKkmCheckEvent({required this.fiscalNumber});
+
+  @override
+  List<Object> get props => [fiscalNumber];
 }
